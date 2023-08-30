@@ -1,9 +1,8 @@
 import express from "express";
 import { itemsController } from "@api/v1/controllers";
-import { validateRequest } from "../middlewares";
+import { validateRequest } from "@api/v1/middlewares";
 import { z } from "zod";
 import {
-  CreateItemInput,
   CreateItemInputSchema,
   GetItemInputSchema,
   UpdateItemInputSchema,
@@ -20,7 +19,7 @@ router
   );
 
 router
-  .route("/:itemId")
+  .route("/:item_id")
   .all([validateRequest(z.object({ params: GetItemInputSchema }))])
   .get(itemsController.getOne)
   .delete(itemsController.deleteOne)

@@ -1,5 +1,10 @@
 import { Pool } from "pg";
-import { CreateItemInput, ItemOutput, UpdateItemInput } from "../models";
+import {
+  CreateItemInput,
+  ItemOutput,
+  ItemOutputSchema,
+  UpdateItemInput,
+} from "../models";
 
 export class ItemsService {
   private static pool: Pool;
@@ -10,7 +15,7 @@ export class ItemsService {
 
   static async getAll(): Promise<ItemOutput[]> {
     const result = await this.pool.query("SELECT * FROM items");
-    return result.rows;
+    return result.rows.map((item) => ItemOutputSchema.parse(item));
   }
 
   static async createOne(item: CreateItemInput): Promise<ItemOutput> {
@@ -26,16 +31,45 @@ export class ItemsService {
       item.description,
     ];
     const result = await this.pool.query(query, values);
-
-    return result.rows[0];
+    const createdItem = result.rows[0];
+    return createdItem && ItemOutputSchema.parse(createdItem);
   }
 
   static async getOne(itemId: string): Promise<ItemOutput | null> {
-    const items = await this.pool.query(
-      "SELECT * FROM items WHERE item_id = $1",
+    const result = await this.pool.query(
+      `
+      SELECT 
+        items.item_id,
+        items.name,
+        items.description,
+      CASE
+        WHEN categories.category_id IS NULL AND categories.name IS NULL
+        THEN NULL
+        ELSE jsonb_build_object(
+          'category_id', categories.category_id,
+          'category_name', categories.name
+        )
+      END AS category,
+      CASE
+        WHEN brands.brand_id IS NULL AND brands.name IS NULL
+        THEN NULL
+        ELSE jsonb_build_object(
+          'brand_id', brands.brand_id,
+          'brand_name', brands.name
+        )
+      END AS brand
+      FROM 
+        items
+      LEFT JOIN 
+        categories ON items.category_id = categories.category_id
+      LEFT JOIN
+        brands ON items.brand_id = brands.brand_id
+      WHERE item_id = $1;
+      `,
       [itemId]
     );
-    return items.rows[0];
+    const item = result.rows[0];
+    return item && ItemOutputSchema.parse(item);
   }
 
   static async deleteOne(itemId: string): Promise<ItemOutput | null> {
@@ -43,7 +77,8 @@ export class ItemsService {
       "DELETE FROM items WHERE item_id = $1  RETURNING *",
       [itemId]
     );
-    return result.rows[0];
+    const deletedItem = result.rows[0];
+    return deletedItem && ItemOutputSchema.parse(deletedItem);
   }
 
   static async updateOne(
@@ -68,6 +103,7 @@ export class ItemsService {
       itemId,
     ];
     const result = await this.pool.query(query, values);
-    return result.rows[0];
+    const updatedItem = result.rows[0];
+    return updatedItem && ItemOutputSchema.parse(updatedItem);
   }
 }

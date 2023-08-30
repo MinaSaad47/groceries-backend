@@ -6,11 +6,15 @@ SET TIMEZONE TO 'Africa/Cairo';
 -- Enable the UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create UserRole enum
+CREATE TYPE user_role AS ENUM ('admin', 'user');
+
 -- Create Users table
 CREATE TABLE users (
   user_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   username varchar(255) NOT NULL,
-  email varchar(255) NOT NULL
+  email varchar(255) NOT NULL,
+  role user_role NOT NULL DEFAULT 'user'
 );
 
 -- Create Categories table
@@ -89,3 +93,6 @@ DROP TABLE IF EXISTS categories;
 
 -- Drop Users table
 DROP TABLE IF EXISTS users;
+
+-- Drop Role enum
+DROP TYPE user_role;

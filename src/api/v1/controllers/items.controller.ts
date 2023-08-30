@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ItemsService } from "../services";
+import { ItemsService } from "@api/v1/services";
 import {
   CreateItemInput,
   GetItemInput,
@@ -25,7 +25,7 @@ export const getOne = async (
   req: Request<GetItemInput, {}, {}>,
   res: Response<ItemOutput>
 ) => {
-  const itemId = req.params.itemId;
+  const itemId = req.params.item_id;
   const item = await ItemsService.getOne(itemId);
   if (!item) {
     return res.status(404).send();
@@ -37,7 +37,7 @@ export const deleteOne = async (
   req: Request<GetItemInput, {}, {}>,
   res: Response<ItemOutput>
 ) => {
-  const itemId = req.params.itemId;
+  const itemId = req.params.item_id;
   const item = await ItemsService.deleteOne(itemId);
   if (!item) {
     return res.status(404).send();
@@ -49,9 +49,9 @@ export const updateOne = async (
   req: Request<GetItemInput, {}, UpdateItemInput>,
   res: Response<ItemOutput>
 ) => {
-  const itemId = req.params.itemId;
-  const createdItem = req.body;
-  const item = await ItemsService.updateOne(itemId, createdItem);
+  const itemId = req.params.item_id;
+  const updatedItem = req.body;
+  const item = await ItemsService.updateOne(itemId, updatedItem);
   if (!item) {
     return res.status(404).send();
   }
