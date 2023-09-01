@@ -1,14 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { UserOutput, UserRole } from "@api/v1/models";
-
-export const authenticateUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) =>
-{
-    
-};
+import passport from "passport";
 
 export const authorizeRoles =
   (...roles: UserRole[]) =>
@@ -19,3 +11,5 @@ export const authorizeRoles =
     }
     return next();
   };
+
+export const requireJwt = passport.authenticate("jwt", { session: false });

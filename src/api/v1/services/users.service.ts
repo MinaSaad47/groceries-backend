@@ -18,6 +18,15 @@ export class UsersService {
     return result.rows.map((user) => UserOutputSchema.parse(user));
   }
 
+  static async findByEmail(email: string): Promise<UserOutput | null> {
+    const result = await this.pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    const user = result.rows[0];
+    return user && UserOutputSchema.parse(user);
+  }
+
   static async createOne(user: CreateUserInput): Promise<UserOutput> {
     const query = `
         INSERT INTO users (username, email, role)

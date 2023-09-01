@@ -5,22 +5,36 @@ import express from "express";
 import { config } from "@config";
 import routes from "@api/v1/routes";
 import logger from "@api/v1/utils/logger";
+import { pool } from "@api/v1/db";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import {
   BrandsService,
   CategoriesService,
   ItemsService,
   UsersService,
 } from "@api/v1/services";
-import { pool } from "@api/v1/db";
+import { FavoritesService } from "@api/v1/services";
 
 ItemsService.setPool(pool);
 CategoriesService.setPool(pool);
 BrandsService.setPool(pool);
 UsersService.setPool(pool);
+FavoritesService.setPool(pool);
+
+require("@api/v1/services/strategies");
+
+const isProduction = process.env.NODE_ENV === "production";
+const secretOrKey = isProduction
+  ? process.env.JWT_SECRET_PROD
+  : process.env.JWT_SECRET_DEV;
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser(secretOrKey));
 
 async function main() {
   logger.debug(`Config: ${JSON.stringify(config, null, 4)}`);

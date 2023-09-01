@@ -25,5 +25,6 @@ export const ItemOutputSchema = ItemSchema.extend({
   item_id: z.string().uuid(),
   category: CategorySchema.nullish(),
   brand: BrandSchema.nullish(),
+  is_favorite: z.boolean().optional(),
 }).omit({ brand_id: true, category_id: true });
 export type ItemOutput = z.infer<typeof ItemOutputSchema>;
