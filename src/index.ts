@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import {
   BrandsService,
+  CartsService,
   CategoriesService,
   ItemsService,
   UsersService,
@@ -21,6 +22,7 @@ CategoriesService.setPool(pool);
 BrandsService.setPool(pool);
 UsersService.setPool(pool);
 FavoritesService.setPool(pool);
+CartsService.setPool(pool);
 
 require("@api/v1/services/strategies");
 

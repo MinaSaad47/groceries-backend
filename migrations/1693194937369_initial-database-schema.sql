@@ -68,7 +68,34 @@ CREATE TABLE favorites (
   item_id uuid REFERENCES items(item_id)
 );
 
+-- Create OrderStatus enum
+CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled');
+
+-- Create Orders table
+CREATE TABLE orders (
+  order_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(user_id),
+  order_date timestamp DEFAULT now(),
+  total_amount decimal NOT NULL,
+  status order_status DEFAULT 'pending'
+);
+
+-- Create OrderItems table
+CREATE TABLE order_items (
+  order_item_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id uuid REFERENCES orders(order_id),
+  item_id uuid REFERENCES items(item_id),
+  quantity decimal NOT NULL,
+  price_per_unit decimal NOT NULL
+);
+
 -- Down Migration
+
+-- Drop OrderItems table
+DROP TABLE IF EXISTS order_items;
+
+-- Drop Orders table
+DROP TABLE IF EXISTS orders;
 
 -- Drop Favorites table
 DROP TABLE IF EXISTS favorites;

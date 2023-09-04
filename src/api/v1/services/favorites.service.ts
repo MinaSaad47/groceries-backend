@@ -44,6 +44,8 @@ export class FavoritesService {
     } catch (error) {
       logger.error(error);
       await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
     return item;
   }
@@ -73,6 +75,8 @@ export class FavoritesService {
     } catch (error) {
       logger.error(error);
       await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
     return item;
   }
