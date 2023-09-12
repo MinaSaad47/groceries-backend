@@ -29,11 +29,17 @@ export class UsersService {
 
   static async createOne(user: CreateUserInput): Promise<UserOutput> {
     const query = `
-        INSERT INTO users (username, email, role)
-        VALUES ($1, $2, $3)
+        INSERT INTO users (first_name, last_name, email, phone_number, role)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *;
         `;
-    const values = [user.username, user.email, user.role];
+    const values = [
+      user.first_name,
+      user.last_name,
+      user.email,
+      user.phone_number,
+      user.role,
+    ];
     const result = await this.pool.query(query, values);
     const createdUser = result.rows[0];
     return createdUser && UserOutputSchema.parse(createdUser);
@@ -64,13 +70,22 @@ export class UsersService {
     const query = `
     UPDATE users
     SET
-        username = COALESCE(NULLIF($1, ''), username),
-        email = COALESCE(NULLIF($2, ''), email),
-        role = COALESCE(NULLIF($3, ''), role::text)::user_role
-    WHERE user_id = $4
+        first_name = COALESCE(NULLIF($1, ''), first_name),
+        last_name = COALESCE(NULLIF($2, ''), last_name),
+        email = COALESCE(NULLIF($3, ''), email),
+        profile_picture = COALESCE(NULLIF($4, ''), profile_picture),
+        role = COALESCE(NULLIF($5, ''), role::text)::user_role
+    WHERE user_id = $6
     RETURNING *;
     `;
-    const values = [user.username, user.email, user.role, userId];
+    const values = [
+      user.first_name,
+      user.last_name,
+      user.email,
+      user.profile_picture,
+      user.role,
+      userId,
+    ];
     const result = await this.pool.query(query, values);
     const updatedUser = result.rows[0];
     return updatedUser && UserOutputSchema.parse(updatedUser);

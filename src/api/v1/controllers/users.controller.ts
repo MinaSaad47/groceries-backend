@@ -18,6 +18,7 @@ export const createOne = async (
 
 export const getAll = async (req: Request, res: Response<UserOutput[]>) => {
   const users = await UsersService.getAll();
+  console.log(req.baseUrl.split("/").reverse()[0]);
   return res.status(200).json(users);
 };
 

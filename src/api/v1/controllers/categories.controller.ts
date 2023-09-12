@@ -1,11 +1,25 @@
 import { Request, Response } from "express";
-import { CategoriesService } from "@api/v1/services"; // Update the import based on your CategoryService
+import { CategoriesService } from "@api/v1/services";
 import {
   CreateCategoryInput,
   GetCategoryInput,
   CategoryOutput,
   UpdateCategoryInput,
-} from "../models"; // Update the imports based on your Category models
+} from "../models";
+
+export const addImage = async (
+  req: Request<GetCategoryInput>,
+  res: Response<CategoryOutput>
+) => {
+  const image = req.file?.path;
+  const categoryId = req.params.category_id;
+  const category = await CategoriesService.updateOne(categoryId, { image });
+  if (category) {
+    return res.status(200).json(category);
+  } else {
+    return res.status(404).send();
+  }
+};
 
 export const getAll = async (req: Request, res: Response<CategoryOutput[]>) => {
   const result = await CategoriesService.getAll();

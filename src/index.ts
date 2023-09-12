@@ -9,6 +9,7 @@ import { pool } from "@api/v1/db";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import {
+  AddressesService,
   BrandsService,
   CartsService,
   CategoriesService,
@@ -23,6 +24,7 @@ BrandsService.setPool(pool);
 UsersService.setPool(pool);
 FavoritesService.setPool(pool);
 CartsService.setPool(pool);
+AddressesService.setPool(pool);
 
 require("@api/v1/services/strategies");
 
@@ -34,6 +36,7 @@ const secretOrKey = isProduction
 const app = express();
 
 app.use(cors());
+app.use("/public", express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(secretOrKey));

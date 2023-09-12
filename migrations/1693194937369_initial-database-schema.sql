@@ -12,15 +12,31 @@ CREATE TYPE user_role AS ENUM ('admin', 'user');
 -- Create Users table
 CREATE TABLE users (
   user_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  username varchar(255) NOT NULL,
+  first_name varchar(255),
+  last_name varchar(255),
   email varchar(255) NOT NULL,
+  phone_number varchar(32),
+  day_of_birth DATE,
+  profile_picture varchar(255),
   role user_role NOT NULL DEFAULT 'user'
+);
+
+-- Create Addresses table
+CREATE TABLE addresses (
+  address_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(user_id),
+  building_number varchar(255),
+  apartment_number varchar(255),
+  floor_number varchar(255),
+  latitude decimal,
+  longitude decimal
 );
 
 -- Create Categories table
 CREATE TABLE categories (
   category_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   name varchar(255) NOT NULL
+  image varchar(255),
 );
 
 -- Create Brands table
@@ -97,6 +113,9 @@ DROP TABLE IF EXISTS order_items;
 -- Drop Orders table
 DROP TABLE IF EXISTS orders;
 
+-- Drop OrderStatus enum
+DROP TYPE order_status;
+
 -- Drop Favorites table
 DROP TABLE IF EXISTS favorites;
 
@@ -117,6 +136,9 @@ DROP TABLE IF EXISTS brands;
 
 -- Drop Categories table
 DROP TABLE IF EXISTS categories;
+
+-- Drop Addresses table
+DROP TABLE IF EXISTS addresses;
 
 -- Drop Users table
 DROP TABLE IF EXISTS users;

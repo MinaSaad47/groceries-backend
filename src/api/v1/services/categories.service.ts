@@ -44,11 +44,13 @@ export class CategoriesService {
   ): Promise<CategoryOutput | null> {
     const query = `
       UPDATE categories
-      SET name = $1
-      WHERE category_id = $2
+      SET
+        name = COALESCE(NULLIF($1, ''), name),
+        image = COALESCE(NULLIF($2, ''), image)
+      WHERE category_id = $3
       RETURNING *;
     `;
-    const values = [category.name, categoryId];
+    const values = [category.name, category.image, categoryId];
     const result = await this.pool.query(query, values);
     const updatedCategory = result.rows[0];
     return updatedCategory && CategoryOutputSchema.parse(updatedCategory);

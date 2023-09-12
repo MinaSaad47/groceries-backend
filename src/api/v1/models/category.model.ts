@@ -1,9 +1,9 @@
 import { TypeOf, z } from "zod";
-import { TimestampSchema } from "./timestamp.model";
 
 export const CategorySchema = z.object({
   category_id: z.string().uuid().optional(),
   name: z.string(),
+  image: z.string().optional(),
 });
 
 // inputs

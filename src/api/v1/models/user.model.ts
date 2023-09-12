@@ -7,8 +7,11 @@ export enum UserRole {
 }
 
 export const UserSchema = z.object({
-  username: z.string(),
+  first_name: z.string().nullish(),
+  last_name: z.string().nullish(),
   email: z.string().email(),
+  phone_number: z.string().nullish(),
+  profile_picture: z.string().nullish(),
   role: z.nativeEnum(UserRole).default(UserRole.User),
 });
 

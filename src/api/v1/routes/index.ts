@@ -6,6 +6,9 @@ import categoriesRouter from "./categories.router";
 import brandsRouter from "./brands.router";
 import authRouter from "./auth.router";
 import favoratesRouter from "./favorite.router";
+import profileRouter from "./profile.router";
+import addressesRouter from "./addresses.router";
+import { requireJwt } from "../middlewares";
 
 export default function routes(app: Express) {
   app.get("/health_check", (req: Request, res: Response) =>
@@ -19,4 +22,6 @@ export default function routes(app: Express) {
   app.use("/api/v1/categories", categoriesRouter);
   app.use("/api/v1/brands", brandsRouter);
   app.use("/api/v1/favorites", favoratesRouter);
+  app.use("/api/v1/profile", profileRouter);
+  app.use("/api/v1/addresses", addressesRouter);
 }

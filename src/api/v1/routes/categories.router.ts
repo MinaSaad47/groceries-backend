@@ -1,6 +1,6 @@
 import express from "express";
 import { categoriesController } from "@api/v1/controllers";
-import { validateRequest } from "@api/v1/middlewares";
+import { uploadCategoryImage, validateRequest } from "@api/v1/middlewares";
 import { z } from "zod";
 import {
   CreateCategoryInputSchema,
@@ -27,5 +27,10 @@ router
     [validateRequest(z.object({ body: UpdateCategoryInputSchema }))],
     categoriesController.updateOne
   );
+
+router
+  .route("/:category_id/upload-image")
+  .all([validateRequest(z.object({ params: GetCategoryInputSchema }))])
+  .post(uploadCategoryImage, categoriesController.addImage);
 
 export default router;
