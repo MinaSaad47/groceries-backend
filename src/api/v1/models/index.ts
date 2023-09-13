@@ -6,3 +6,4 @@ export * from "./brand.model";
 export * from "./favorite.model";
 export * from "./cart.model";
 export * from "./address.model";
+export * from "./review.model";

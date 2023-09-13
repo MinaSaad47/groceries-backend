@@ -1,12 +1,12 @@
 import express from "express";
-import { brandsController } from "@api/v1/controllers"; // Update the import based on your BrandsController
+import { brandsController } from "@api/v1/controllers";
 import { validateRequest } from "@api/v1/middlewares";
 import { z } from "zod";
 import {
   CreateBrandInputSchema,
   GetBrandInputSchema,
   UpdateBrandInputSchema,
-} from "../models"; // Update the imports based on your Brand models
+} from "../models";
 
 const router = express.Router();
 

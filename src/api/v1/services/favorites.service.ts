@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { ItemOutput, ItemOutputSchema } from "@api/v1/models"; // Import the appropriate item model
+import { ItemOutput, ItemOutputSchema } from "@api/v1/models";
 import logger from "../utils/logger";
 
 export class FavoritesService {

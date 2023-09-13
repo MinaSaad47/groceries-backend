@@ -1,6 +1,6 @@
 import express from "express";
-import { favoritesController } from "@api/v1/controllers"; // Update the import based on your FavoritesController
-import { requireJwt, validateRequest } from "@api/v1/middlewares"; // Update the imports based on your middlewares
+import { favoritesController } from "@api/v1/controllers";
+import { requireJwt, validateRequest } from "@api/v1/middlewares";
 import { z } from "zod";
 import { CreateFavoriteSchema, DeleteFavoriteSchema } from "@api/v1/models";
 

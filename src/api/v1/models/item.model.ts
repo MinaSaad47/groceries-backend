@@ -1,13 +1,16 @@
 import { TypeOf, z } from "zod";
-import { TimestampSchema } from "./timestamp.model";
 import { CategorySchema } from "./category.model";
 import { BrandSchema } from "./brand.model";
+import { ReviewSchema, ReviewWithUserOutputSchema } from "./review.model";
+import { UserOutputSchema, UserSchema } from "./user.model";
 
 export const ItemSchema = z.object({
   category_id: z.string().uuid().optional(),
   brand_id: z.string().uuid().optional(),
   name: z.string(),
   description: z.string(),
+  thumbnail: z.string().nullish(),
+  images: z.array(z.string()).nullish(),
 });
 
 // inputs
@@ -26,5 +29,13 @@ export const ItemOutputSchema = ItemSchema.extend({
   category: CategorySchema.nullish(),
   brand: BrandSchema.nullish(),
   is_favorite: z.boolean().optional(),
+  images: z
+    .array(z.string())
+    .nullish()
+    .transform((obj) => obj ?? []),
+  reviews: z
+    .array(ReviewWithUserOutputSchema)
+    .nullish()
+    .transform((obj) => obj ?? []),
 }).omit({ brand_id: true, category_id: true });
 export type ItemOutput = z.infer<typeof ItemOutputSchema>;

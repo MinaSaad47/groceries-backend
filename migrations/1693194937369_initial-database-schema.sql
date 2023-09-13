@@ -1,7 +1,7 @@
 -- Up Migration
-
 -- Set the timezone to Cairo, Egypt
-SET TIMEZONE TO 'Africa/Cairo';
+SET
+  TIMEZONE TO 'Africa/Cairo';
 
 -- Enable the UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TYPE user_role AS ENUM ('admin', 'user');
 
 -- Create Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   user_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   first_name varchar(255),
   last_name varchar(255),
@@ -22,7 +22,7 @@ CREATE TABLE users (
 );
 
 -- Create Addresses table
-CREATE TABLE addresses (
+CREATE TABLE IF NOT EXISTS addresses (
   address_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid REFERENCES users(user_id),
   building_number varchar(255),
@@ -33,29 +33,36 @@ CREATE TABLE addresses (
 );
 
 -- Create Categories table
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
   category_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name varchar(255) NOT NULL
-  image varchar(255),
+  name varchar(255) NOT NULL image varchar(255),
 );
 
 -- Create Brands table
-CREATE TABLE brands (
+CREATE TABLE IF NOT EXISTS brands (
   brand_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   name varchar(255) NOT NULL
 );
 
 -- Create Items table
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
   item_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   category_id uuid REFERENCES categories(category_id),
   brand_id uuid REFERENCES brands(brand_id),
   name varchar(255) NOT NULL,
+  thumbnail varchar(255),
   description text
 );
 
+-- Create ItemImages table
+CREATE TABLE IF NOT EXISTS item_images (
+  image_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  item_id uuid REFERENCES items(item_id),
+  image varchar(255) NOT NULL
+);
+
 -- Create Prices table
-CREATE TABLE prices (
+CREATE TABLE IF NOT EXISTS prices (
   price_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   item_id uuid REFERENCES items(item_id),
   quantity_type varchar(50) NOT NULL,
@@ -64,13 +71,13 @@ CREATE TABLE prices (
 );
 
 -- Create Carts table
-CREATE TABLE carts (
+CREATE TABLE IF NOT EXISTS carts (
   cart_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid REFERENCES users(user_id)
 );
 
 -- Create CartItems table
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
   cart_item_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   cart_id uuid REFERENCES carts(cart_id),
   item_id uuid REFERENCES items(item_id),
@@ -78,17 +85,23 @@ CREATE TABLE cart_items (
 );
 
 -- Create Favorites table
-CREATE TABLE favorites (
+CREATE TABLE IF NOT EXISTS favorites (
   favorite_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid REFERENCES users(user_id),
   item_id uuid REFERENCES items(item_id)
 );
 
 -- Create OrderStatus enum
-CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled');
+CREATE TYPE order_status AS ENUM (
+  'pending',
+  'processing',
+  'shipped',
+  'delivered',
+  'cancelled'
+);
 
 -- Create Orders table
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
   order_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id uuid REFERENCES users(user_id),
   order_date timestamp DEFAULT now(),
@@ -97,7 +110,7 @@ CREATE TABLE orders (
 );
 
 -- Create OrderItems table
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
   order_item_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id uuid REFERENCES orders(order_id),
   item_id uuid REFERENCES items(item_id),
@@ -105,9 +118,19 @@ CREATE TABLE order_items (
   price_per_unit decimal NOT NULL
 );
 
--- Down Migration
+-- Create Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+  review_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  item_id uuid REFERENCES items(item_id),
+  user_id uuid REFERENCES users(user_id),
+  rating integer NOT NULL,
+  comment text,
+  created_at timestamptz DEFAULT current_timestamp
+);
 
--- Drop OrderItems table
+-- Down Migration
+-- Drop Reviews table
+DROP TABLE IF EXISTS reviews -- Drop OrderItems table
 DROP TABLE IF EXISTS order_items;
 
 -- Drop Orders table
@@ -127,6 +150,9 @@ DROP TABLE IF EXISTS carts;
 
 -- Drop Prices table
 DROP TABLE IF EXISTS prices;
+
+-- DROP ItemImages table
+DROP TABLE IF EXISTS item_images;
 
 -- Drop Items table
 DROP TABLE IF EXISTS items;

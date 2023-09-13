@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { CreateReviewInput } from "../models/review.model";
 import {
   CreateItemInput,
   ItemOutput,
@@ -14,7 +15,7 @@ export class ItemsService {
   }
 
   static async getAll(): Promise<ItemOutput[]> {
-    const result = await this.pool.query("SELECT * FROM items");
+    const result = await this.pool.query("SELECT * FROM items_view");
     return result.rows.map((item) => ItemOutputSchema.parse(item));
   }
 
@@ -37,35 +38,7 @@ export class ItemsService {
 
   static async getOne(itemId: string): Promise<ItemOutput | null> {
     const result = await this.pool.query(
-      `
-      SELECT 
-        items.item_id,
-        items.name,
-        items.description,
-      CASE
-        WHEN categories.category_id IS NULL AND categories.name IS NULL
-        THEN NULL
-        ELSE jsonb_build_object(
-          'category_id', categories.category_id,
-          'category_name', categories.name
-        )
-      END AS category,
-      CASE
-        WHEN brands.brand_id IS NULL AND brands.name IS NULL
-        THEN NULL
-        ELSE jsonb_build_object(
-          'brand_id', brands.brand_id,
-          'brand_name', brands.name
-        )
-      END AS brand
-      FROM 
-        items
-      LEFT JOIN 
-        categories ON items.category_id = categories.category_id
-      LEFT JOIN
-        brands ON items.brand_id = brands.brand_id
-      WHERE item_id = $1;
-      `,
+      `SELECT * FROM items_view WHERE item_id = $1`,
       [itemId]
     );
     const item = result.rows[0];
@@ -90,8 +63,8 @@ export class ItemsService {
     SET
         category_id = COALESCE(NULLIF($1, ''), category_id::text)::uuid,
         brand_id = COALESCE(NULLIF($2, ''), brand_id::text)::uuid,
-        name = COALESCE(NULLIF($3, ''), name),
-        description = COALESCE(NULLIF($4, ''), description)
+        name = COALESCE($3, name),
+        description = COALESCE($4, description)
         WHERE item_id = $5
     RETURNING *;
     `;
@@ -105,5 +78,25 @@ export class ItemsService {
     const result = await this.pool.query(query, values);
     const updatedItem = result.rows[0];
     return updatedItem && ItemOutputSchema.parse(updatedItem);
+  }
+
+  static async addImage(
+    itemId: string,
+    image: string
+  ): Promise<ItemOutput | null> {
+    const query = `
+    INSERT INTO item_images (item_id, image)
+    VALUES ($1, $2)
+    RETURNING *;
+    `;
+
+    let result = await this.pool.query(query, [itemId, image]);
+
+    console.log(result);
+    if (result.rows.length < 1) {
+      return null;
+    }
+
+    return await this.getOne(itemId);
   }
 }

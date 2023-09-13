@@ -5,3 +5,4 @@ export * from "./brands.service";
 export * from "./favorites.service";
 export * from "./carts.service";
 export * from "./addresses.service";
+export * from "./reviews.service";

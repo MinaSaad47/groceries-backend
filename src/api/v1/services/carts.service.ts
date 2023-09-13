@@ -5,7 +5,7 @@ import {
   CartSchema,
   ItemOutput,
   ItemOutputSchema,
-} from "@api/v1/models"; // Import the appropriate item model
+} from "@api/v1/models";
 
 export class CartsService {
   private static pool: Pool;

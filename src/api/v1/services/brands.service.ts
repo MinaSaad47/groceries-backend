@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { BrandOutput, BrandOutputSchema, UpdateBrandInput } from "../models"; // Update the imports based on your Brand models
+import { BrandOutput, BrandOutputSchema, UpdateBrandInput } from "../models";
 
 export class BrandsService {
   private static pool: Pool;

@@ -14,6 +14,7 @@ import {
   CartsService,
   CategoriesService,
   ItemsService,
+  ReviewsService,
   UsersService,
 } from "@api/v1/services";
 import { FavoritesService } from "@api/v1/services";
@@ -25,6 +26,7 @@ UsersService.setPool(pool);
 FavoritesService.setPool(pool);
 CartsService.setPool(pool);
 AddressesService.setPool(pool);
+ReviewsService.setPool(pool);
 
 require("@api/v1/services/strategies");
 
