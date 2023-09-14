@@ -21,8 +21,8 @@ export class ItemsService {
 
   static async createOne(item: CreateItemInput): Promise<ItemOutput> {
     const query = `
-        INSERT INTO items (category_id, brand_id, name, description)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO items (category_id, brand_id, name, description, price, quantity, quantity_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *;
         `;
     const values = [
@@ -30,6 +30,9 @@ export class ItemsService {
       item.brand_id,
       item.name,
       item.description,
+      item.price,
+      item.quantity,
+      item.quantity_type,
     ];
     const result = await this.pool.query(query, values);
     const createdItem = result.rows[0];
@@ -65,7 +68,10 @@ export class ItemsService {
         brand_id = COALESCE(NULLIF($2, ''), brand_id::text)::uuid,
         name = COALESCE($3, name),
         description = COALESCE($4, description)
-        WHERE item_id = $5
+        price = COALESCE($5, price),
+        quantity = COALESCE($6, quantity)
+        quantity_type = COALESCE($7, quantity_type)
+        WHERE item_id = $7
     RETURNING *;
     `;
     const values = [
@@ -73,6 +79,9 @@ export class ItemsService {
       item.brand_id,
       item.name,
       item.description,
+      item.price,
+      item.quantity,
+      item.quantity_type,
       itemId,
     ];
     const result = await this.pool.query(query, values);

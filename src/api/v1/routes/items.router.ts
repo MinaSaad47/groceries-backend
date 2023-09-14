@@ -15,7 +15,42 @@ import {
 } from "../models";
 
 const router = express.Router();
-
+/**
+ * @swagger
+ * /api/v1/items:
+ *   get:
+ *     tags:
+ *     - Items
+ *     summary: Get all items
+ *     description: Retrieve a list of all items.
+ *     responses:
+ *       200:
+ *         description: A list of items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ItemOutput'
+ *   post:
+ *     tags:
+ *     - Items
+ *     summary: Create a new item
+ *     description: Create a new item.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateItemInput'
+ *     responses:
+ *       201:
+ *         description: The created item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ItemOutput'
+ */
 router
   .route("/")
   .get(itemsController.getAll)

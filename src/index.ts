@@ -18,6 +18,7 @@ import {
   UsersService,
 } from "@api/v1/services";
 import { FavoritesService } from "@api/v1/services";
+import swaggerDocs from "@api/v1/utils/swagger";
 
 ItemsService.setPool(pool);
 CategoriesService.setPool(pool);
@@ -49,6 +50,7 @@ async function main() {
     logger.info(`App is listening on port ${config.app.port}`)
   );
   routes(app);
+  swaggerDocs(app, config.app.port);
 }
 
 main();

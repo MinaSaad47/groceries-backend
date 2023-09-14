@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS addresses (
 -- Create Categories table
 CREATE TABLE IF NOT EXISTS categories (
   category_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name varchar(255) NOT NULL image varchar(255),
+  name varchar(255) NOT NULL
 );
 
 -- Create Brands table
@@ -51,7 +51,11 @@ CREATE TABLE IF NOT EXISTS items (
   brand_id uuid REFERENCES brands(brand_id),
   name varchar(255) NOT NULL,
   thumbnail varchar(255),
-  description text
+  description text,
+  price decimal NOT NULL,
+  offer_price decimal,
+  quantity decimal NOT NULL,
+  quantity_type varchar(50) NOT NULL
 );
 
 -- Create ItemImages table
@@ -59,15 +63,6 @@ CREATE TABLE IF NOT EXISTS item_images (
   image_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   item_id uuid REFERENCES items(item_id),
   image varchar(255) NOT NULL
-);
-
--- Create Prices table
-CREATE TABLE IF NOT EXISTS prices (
-  price_id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  item_id uuid REFERENCES items(item_id),
-  quantity_type varchar(50) NOT NULL,
-  quantity decimal NOT NULL,
-  price decimal NOT NULL
 );
 
 -- Create Carts table
@@ -130,7 +125,9 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 -- Down Migration
 -- Drop Reviews table
-DROP TABLE IF EXISTS reviews -- Drop OrderItems table
+DROP TABLE IF EXISTS reviews;
+
+-- Drop OrderItems table
 DROP TABLE IF EXISTS order_items;
 
 -- Drop Orders table
@@ -147,9 +144,6 @@ DROP TABLE IF EXISTS cart_items;
 
 -- Drop Carts table
 DROP TABLE IF EXISTS carts;
-
--- Drop Prices table
-DROP TABLE IF EXISTS prices;
 
 -- DROP ItemImages table
 DROP TABLE IF EXISTS item_images;

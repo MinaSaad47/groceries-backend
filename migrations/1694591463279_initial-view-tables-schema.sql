@@ -19,6 +19,9 @@ SELECT
 	items.item_id,
 	items.name,
 	items.description,
+	items.price,
+	items.quantity,
+	items.quantity_type,
 	thumbnail,
 	(
 		SELECT
@@ -50,6 +53,6 @@ FROM
 	LEFT JOIN brands ON items.brand_id = brands.brand_id;
 
 -- Down Migration
-DROP VIEW IF EXISTS reviews_view;
-
 DROP VIEW IF EXISTS items_view;
+
+DROP VIEW IF EXISTS reviews_view;

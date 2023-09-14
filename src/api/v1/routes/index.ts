@@ -11,7 +11,19 @@ import addressesRouter from "./addresses.router";
 import { requireJwt } from "../middlewares";
 
 export default function routes(app: Express) {
-  app.get("/health_check", (req: Request, res: Response) =>
+  /**
+   * @swagger
+   * /health-check:
+   *  get:
+   *    tags:
+   *    - HealthCheck
+   *    summary: Health Check
+   *    description: Endpoint to check the health of the API.
+   *    responses:
+   *      200:
+   *        description: The API is healthy.
+   */
+  app.get("/health-check", (req: Request, res: Response) =>
     res.sendStatus(200)
   );
 
