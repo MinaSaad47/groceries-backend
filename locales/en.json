@@ -1,0 +1,27 @@
+{
+    "success": {
+        "200": {
+            "user": {
+                "update": "User was updated successfully",
+                "delete": "User was deleted successfully"
+            },
+            "item": {
+                "update": "Item was updated successfully",
+                "delete": "Item was deleted successfully"
+            }
+        },
+        "201": {
+            "user": "User was created successfully",
+            "item": "Item was created successfully"
+        }
+    },
+    "fail": {
+        "404": {
+            "user": "A user with id `{{id}}` was not found",
+            "item": "An item with id `{{id}}` was not found"
+        }
+    },
+    "error": {
+
+    }
+}

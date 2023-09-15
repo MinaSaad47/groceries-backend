@@ -13,13 +13,12 @@ export const createOne = async (
 ) => {
   const createdUser = req.body;
   const user = await UsersService.createOne(createdUser);
-  return res.status(201).json(user);
+  return res.success({ data: user, code: 201, i18n: { key: "user" } });
 };
 
 export const getAll = async (req: Request, res: Response<UserOutput[]>) => {
   const users = await UsersService.getAll();
-  console.log(req.baseUrl.split("/").reverse()[0]);
-  return res.status(200).json(users);
+  return res.success({ data: users });
 };
 
 export const getOne = async (
@@ -29,9 +28,9 @@ export const getOne = async (
   const userId = req.params.user_id;
   const user = await UsersService.getOne(userId);
   if (!user) {
-    return res.status(404).send();
+    return res.fail({ code: 404, i18n: { key: "user", args: { id: userId } } });
   }
-  return res.status(200).json(user);
+  return res.success({ data: user });
 };
 
 export const updateOne = async (
@@ -42,9 +41,9 @@ export const updateOne = async (
   const updatedUser = req.body;
   const user = await UsersService.updateOne(userId, updatedUser);
   if (!user) {
-    return res.status(404).send();
+    return res.fail({ code: 404, i18n: { key: "user", args: { id: userId } } });
   }
-  return res.status(200).json(user);
+  return res.success({ data: user, i18n: { key: "user.update" } });
 };
 
 export const deleteOne = async (
@@ -54,7 +53,7 @@ export const deleteOne = async (
   const userId = req.params.user_id;
   const user = await UsersService.deleteOne(userId);
   if (!user) {
-    return res.status(404).send();
+    return res.fail({ code: 404, i18n: { key: "user", args: { id: userId } } });
   }
-  return res.status(200).json(user);
+  return res.success({ data: user, i18n: { key: "user.delete" } });
 };

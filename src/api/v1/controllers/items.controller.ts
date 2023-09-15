@@ -10,8 +10,8 @@ import {
 import { ReviewOutput, CreateReviewInput } from "../models/review.model";
 
 export const getAll = async (req: Request, res: Response<ItemOutput[]>) => {
-  const result = await ItemsService.getAll();
-  res.status(200).json(result);
+  const items = await ItemsService.getAll();
+  res.success({ data: items });
 };
 
 export const createOne = async (
@@ -20,7 +20,7 @@ export const createOne = async (
 ) => {
   const item = req.body;
   const createdItem = await ItemsService.createOne(item);
-  return res.status(201).json(createdItem);
+  return res.success({ code: 201, data: createdItem, i18n: { key: "item" } });
 };
 
 export const getOne = async (
@@ -30,9 +30,9 @@ export const getOne = async (
   const itemId = req.params.item_id;
   const item = await ItemsService.getOne(itemId);
   if (!item) {
-    return res.status(404).send();
+    return res.fail({ code: 404, i18n: { key: "item", args: { id: itemId } } });
   }
-  return res.status(200).json(item);
+  return res.success({ data: item });
 };
 
 export const deleteOne = async (
@@ -42,9 +42,9 @@ export const deleteOne = async (
   const itemId = req.params.item_id;
   const item = await ItemsService.deleteOne(itemId);
   if (!item) {
-    return res.status(404).send();
+    return res.fail({ code: 404, i18n: { key: "item", args: { id: itemId } } });
   }
-  res.status(200).json(item);
+  res.success({ data: item, i18n: { key: "item.delete" } });
 };
 
 export const updateOne = async (
@@ -55,9 +55,9 @@ export const updateOne = async (
   const updatedItem = req.body;
   const item = await ItemsService.updateOne(itemId, updatedItem);
   if (!item) {
-    return res.status(404).send();
+    return res.fail({ code: 404, i18n: { key: "item", args: { id: itemId } } });
   }
-  res.status(200).json(item);
+  res.success({ data: item, i18n: { key: "item.update" } });
 };
 
 export const addThumbnail = async (
@@ -70,7 +70,7 @@ export const addThumbnail = async (
   if (item) {
     return res.status(200).json(item);
   } else {
-    return res.status(404);
+    return res.fail({ code: 404, i18n: { key: "item" } });
   }
 };
 
@@ -84,7 +84,7 @@ export const addImage = async (
   if (item) {
     return res.status(200).json(item);
   } else {
-    return res.status(404);
+    return res.fail({ code: 404, i18n: { key: "item", args: { id: itemId } } });
   }
 };
 

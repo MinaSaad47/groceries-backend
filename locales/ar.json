@@ -1,0 +1,27 @@
+{
+    "success": {
+        "200": {
+            "user": {
+                "update": "تم تحديث مستخدم بنجاح",
+                "delete": "تم ازالة مستخدم بنجاح"
+            },
+            "item": {
+                "update": "تم تحديث غرض بنجاح",
+                "delete": "تم ازالة عرض بنجاح"
+            }
+        },
+        "201": {
+            "user": "تم اضافة مستخدم بنجاح",
+            "item": "تم اضافة غرض بنجاح"
+        }
+    },
+    "fail": {
+        "404": {
+            "user": "A user with id `{{id}}` was not found",
+            "item": "An item with id `{{id}}` was not found"
+        }
+    },
+    "error": {
+
+    }
+}

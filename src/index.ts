@@ -8,6 +8,9 @@ import logger from "@api/v1/utils/logger";
 import { pool } from "@api/v1/db";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import i18next from "i18next";
+import Backend from "i18next-fs-backend";
+import i18nextHttpMiddleware from "i18next-http-middleware";
 import {
   AddressesService,
   BrandsService,
@@ -19,6 +22,8 @@ import {
 } from "@api/v1/services";
 import { FavoritesService } from "@api/v1/services";
 import swaggerDocs from "@api/v1/utils/swagger";
+import responseExtension from "@api/v1/utils/responseExtension";
+import morgan from "morgan";
 
 ItemsService.setPool(pool);
 CategoriesService.setPool(pool);
@@ -36,13 +41,26 @@ const secretOrKey = isProduction
   ? process.env.JWT_SECRET_PROD
   : process.env.JWT_SECRET_DEV;
 
+i18next
+  .use(Backend)
+  .use(i18nextHttpMiddleware.LanguageDetector)
+  .init({
+    fallbackLng: "en",
+    backend: {
+      loadPath: "./locales/{{lng}}.json",
+    },
+  });
+
 const app = express();
 
+app.use(morgan(isProduction ? "tiny" : "dev"), );
 app.use(cors());
 app.use("/public", express.static("public"));
+app.use(i18nextHttpMiddleware.handle(i18next));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(secretOrKey));
+app.use(responseExtension);
 
 async function main() {
   logger.debug(`Config: ${JSON.stringify(config, null, 4)}`);
