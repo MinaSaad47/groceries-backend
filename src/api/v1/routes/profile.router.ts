@@ -6,7 +6,7 @@ import {
   validateRequest,
 } from "@api/v1/middlewares";
 import { z } from "zod";
-import { UpdateUserInputSchema } from "../models";
+import { UserUpdateBodySchema } from "../models";
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ router
   .route("/")
   .get(profileController.getProfile)
   .patch(
-    [validateRequest(z.object({ body: UpdateUserInputSchema }))],
+    [validateRequest(z.object({ body: UserUpdateBodySchema }))],
     profileController.updateProfile
   );
 

@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 import {
-  CreateUserInput,
-  UpdateUserInput,
-  UserOutput,
-  UserOutputSchema,
+  UserCreateBody,
+  UserUpdateBody,
+  UserResBody,
+  UserResBodySchema,
 } from "@api/v1/models";
 
 export class UsersService {
@@ -13,21 +13,21 @@ export class UsersService {
     UsersService.pool = pool;
   }
 
-  static async getAll(): Promise<UserOutput[]> {
+  static async getAll(): Promise<UserResBody[]> {
     const result = await this.pool.query("SELECT * FROM users");
-    return result.rows.map((user) => UserOutputSchema.parse(user));
+    return result.rows.map((user) => UserResBodySchema.parse(user));
   }
 
-  static async findByEmail(email: string): Promise<UserOutput | null> {
+  static async findByEmail(email: string): Promise<UserResBody | null> {
     const result = await this.pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
     const user = result.rows[0];
-    return user && UserOutputSchema.parse(user);
+    return user && UserResBodySchema.parse(user);
   }
 
-  static async createOne(user: CreateUserInput): Promise<UserOutput> {
+  static async createOne(user: UserCreateBody): Promise<UserResBody> {
     const query = `
         INSERT INTO users (first_name, last_name, email, phone_number, role)
         VALUES ($1, $2, $3, $4, $5)
@@ -42,31 +42,31 @@ export class UsersService {
     ];
     const result = await this.pool.query(query, values);
     const createdUser = result.rows[0];
-    return createdUser && UserOutputSchema.parse(createdUser);
+    return createdUser && UserResBodySchema.parse(createdUser);
   }
 
-  static async getOne(userId: string): Promise<UserOutput | null> {
+  static async getOne(userId: string): Promise<UserResBody | null> {
     const result = await this.pool.query(
       "SELECT * FROM users WHERE user_id = $1",
       [userId]
     );
     const user = result.rows[0];
-    return user && UserOutputSchema.parse(user);
+    return user && UserResBodySchema.parse(user);
   }
 
-  static async deleteOne(userId: string): Promise<UserOutput | null> {
+  static async deleteOne(userId: string): Promise<UserResBody | null> {
     const result = await this.pool.query(
       "DELETE FROM users WHERE user_id = $1  RETURNING *",
       [userId]
     );
     const deletedUser = result.rows[0];
-    return deletedUser && UserOutputSchema.parse(deletedUser);
+    return deletedUser && UserResBodySchema.parse(deletedUser);
   }
 
   static async updateOne(
     userId: string,
-    user: UpdateUserInput
-  ): Promise<UserOutput | null> {
+    user: UserUpdateBody
+  ): Promise<UserResBody | null> {
     const query = `
     UPDATE users
     SET
@@ -88,6 +88,6 @@ export class UsersService {
     ];
     const result = await this.pool.query(query, values);
     const updatedUser = result.rows[0];
-    return updatedUser && UserOutputSchema.parse(updatedUser);
+    return updatedUser && UserResBodySchema.parse(updatedUser);
   }
 }

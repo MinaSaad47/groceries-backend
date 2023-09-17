@@ -22,6 +22,7 @@ passport.use(
       profile: any,
       done: VerifyCallback
     ) => {
+      console.log({ accessToken, refreshToken });
       let user = await UsersService.findByEmail(profile.email);
       if (user) {
         return done(null, user);

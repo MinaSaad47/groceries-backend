@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import {
-  CartOutput,
+  CartResBody,
   CartOutputSchema,
   CartSchema,
-  ItemOutput,
-  ItemOutputSchema,
+  ItemResBody,
+  ItemResBodySchema,
 } from "@api/v1/models";
 
 export class CartsService {
@@ -14,19 +14,30 @@ export class CartsService {
     CartsService.pool = pool;
   }
 
-  static async createOne(userId: string): Promise<CartOutput | null> {
-    const result = await this.pool.query(
-      `
+  static async createOne(userId: string): Promise<CartResBody | null> {
+    const cart = await this.pool.transaction(async (client) => {
+      let result = await client.query(
+        `
         INSERT INTO carts (user_id)
         VALUES ($1)
+        RETURNING *;
       `,
-      [userId]
-    );
-    const cart = result.rows[0];
-    return cart && CartSchema.parse(cart);
+        [userId]
+      );
+      result = await client.query(
+        `
+        SELECT *
+        FROM carts_view
+        WHERE cart_id = $1
+        `,
+        [result.rows[0].cart_id]
+      );
+      return await result.rows[0];
+    });
+    return cart as CartResBody;
   }
 
-  static async getAll(userId: string): Promise<CartOutput[]> {
+  static async getAll(userId: string): Promise<CartResBody[]> {
     const result = await this.pool.query(
       "SELECT * FROM carts WHERE user_id = $1",
       [userId]
@@ -75,37 +86,23 @@ export class CartsService {
   static async getOne(
     cartId: string,
     userId?: string
-  ): Promise<CartOutput | null> {
+  ): Promise<CartResBody | null> {
     let result = await this.pool.query(
       `
-      SELECT * FROM carts WHERE cart_id = $1 and (user_id IS NULL OR user_id = $2)
+      SELECT *
+      FROM carts_view
+      WHERE cart_id = $1 AND (carts_view.user::json->>'user_id') = $2
       `,
       [cartId, userId]
     );
     const cart = result.rows[0];
-    if (!cart) return null;
-    result = await this.pool.query(
-      `
-      SELECT items.item_id, items.name, cart_items.quantity, prices.price
-      FROM cart_items
-      INNER JOIN items ON cart_items.item_id = items.item_id
-      INNER JOIN prices ON cart_items.item_id = prices.item_id
-      WHERE cart_items.cart_id = $1;
-      `,
-      [cart.cart_id]
-    );
-    const items = result.rows;
-    const total_price = items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-    return CartOutputSchema.parse({ ...cart, items, total_price });
+    return CartOutputSchema.parse(cart);
   }
 
   static async deleteOne(
     cartId: string,
     userId?: string
-  ): Promise<CartOutput | null> {
+  ): Promise<CartResBody | null> {
     const result = await this.pool.query(
       "DELETE FROM carts WHERE cart_id = $1 and (user_id IS NULL OR user_id = $2) RETURNING *",
       [cartId, userId]

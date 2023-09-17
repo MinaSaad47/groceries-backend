@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { ItemOutput, ItemOutputSchema } from "@api/v1/models";
+import { ItemResBody, ItemResBodySchema } from "@api/v1/models";
 import logger from "../utils/logger";
 
 export class FavoritesService {
@@ -9,20 +9,20 @@ export class FavoritesService {
     FavoritesService.pool = pool;
   }
 
-  static async getAll(userId: string): Promise<ItemOutput[]> {
+  static async getAll(userId: string): Promise<ItemResBody[]> {
     const result = await this.pool.query(
       "SELECT items.* FROM favorites JOIN items ON favorites.item_id = items.item_id WHERE favorites.user_id = $1",
       [userId]
     );
     return result.rows.map((item) =>
-      ItemOutputSchema.parse({ ...item, is_favorite: true })
+      ItemResBodySchema.parse({ ...item, is_favorite: true })
     );
   }
 
   static async addOne(
     userId: string,
     itemId: string
-  ): Promise<ItemOutput | null> {
+  ): Promise<ItemResBody | null> {
     const query1 = `
         INSERT INTO favorites (user_id, item_id)
         VALUES ($1, $2)
@@ -31,7 +31,7 @@ export class FavoritesService {
     const query2 = `SELECT * FROM items WHERE item_id = $1`;
 
     const client = await this.pool.connect();
-    let item: ItemOutput | null = null;
+    let item: ItemResBody | null = null;
     try {
       await client.query("BEGIN");
       const result1 = await client.query(query1, [userId, itemId]);
@@ -40,7 +40,7 @@ export class FavoritesService {
       const result2 = await client.query(query2, [itemId]);
       await client.query("COMMIT");
       const favoritedItem = { ...result2.rows[0], is_favorite: true };
-      item = favoritedItem && ItemOutputSchema.parse(favoritedItem);
+      item = favoritedItem && ItemResBodySchema.parse(favoritedItem);
     } catch (error) {
       logger.error(error);
       await client.query("ROLLBACK");
@@ -53,7 +53,7 @@ export class FavoritesService {
   static async deleteOne(
     userId: string,
     itemId: string
-  ): Promise<ItemOutput | null> {
+  ): Promise<ItemResBody | null> {
     const query1 = `
       DELETE FROM favorites
       WHERE user_id = $1 AND item_id = $2
@@ -62,7 +62,7 @@ export class FavoritesService {
     const query2 = `SELECT * FROM items WHERE item_id = $1`;
 
     const client = await this.pool.connect();
-    let item: ItemOutput | null = null;
+    let item: ItemResBody | null = null;
     try {
       await client.query("BEGIN");
       const result1 = await client.query(query1, [userId, itemId]);
@@ -71,7 +71,7 @@ export class FavoritesService {
       const result2 = await client.query(query2, [itemId]);
       await client.query("COMMIT");
       const favoritedItem = { ...result2.rows[0], is_favorite: false };
-      item = favoritedItem && ItemOutputSchema.parse(favoritedItem);
+      item = favoritedItem && ItemResBodySchema.parse(favoritedItem);
     } catch (error) {
       logger.error(error);
       await client.query("ROLLBACK");

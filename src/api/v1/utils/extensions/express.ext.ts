@@ -1,33 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { TFunction } from "i18next";
-
-interface SuccessBody {
-  code?: number;
-  data?: any;
-  i18n?: { key: string; args?: any };
-}
-
-interface FailBody {
-  code?: number;
-  i18n: { key: string; args?: any };
-  data?: any;
-}
-
-interface ErrorBody {
-  code?: number;
-  i18n: { key: string; args?: any };
-  data?: any;
-}
-
-declare global {
-  namespace Express {
-    interface Response {
-      success(body: SuccessBody): void;
-      fail(body: FailBody): void;
-      error(body: ErrorBody): void;
-    }
-  }
-}
 
 export default function responseExtension(
   req: Request,
@@ -44,7 +15,7 @@ export default function responseExtension(
         : req.t(`success.${code}.${i18n.key}`, i18n.args),
     });
   };
-  res.fail = ({ i18n, code = 500, data }: FailBody): void => {
+  res.fail = ({ i18n, code = 400, data }: FailBody): void => {
     res.status(code).json({
       code,
       status: "fail",
@@ -52,7 +23,7 @@ export default function responseExtension(
       data,
     });
   };
-  res.error = ({ i18n, data, code = 400 }: ErrorBody): void => {
+  res.error = ({ i18n, data, code = 500 }: ErrorBody): void => {
     res.status(code).json({
       code,
       status: "error",

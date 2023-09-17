@@ -1,13 +1,13 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
-import { GetCategoryInput, GetItemInput, UserOutput } from "../models";
+import { GetCategoryInput, ItemGetParam, UserResBody } from "../models";
 import { Request } from "express";
 
 export const uploadProfilePicture = multer({
   storage: multer.diskStorage({
     destination: async function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       const directory = `public/profiles/${user.user_id}`;
       try {
         await fs.mkdir(directory, { recursive: true });
@@ -17,7 +17,7 @@ export const uploadProfilePicture = multer({
       }
     },
     filename: function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       cb(null, "picture" + path.extname(file.originalname));
     },
   }),
@@ -26,7 +26,7 @@ export const uploadProfilePicture = multer({
 export const uploadCategoryImage = multer({
   storage: multer.diskStorage({
     destination: async function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       const directory = `public/categories/${req.params.category_id}`;
       try {
         await fs.mkdir(directory, { recursive: true });
@@ -36,7 +36,7 @@ export const uploadCategoryImage = multer({
       }
     },
     filename: function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       cb(null, "image" + path.extname(file.originalname));
     },
   }),
@@ -45,7 +45,7 @@ export const uploadCategoryImage = multer({
 export const uploadItemImage = multer({
   storage: multer.diskStorage({
     destination: async function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       const directory = `public/items/${req.params.item_id}`;
       try {
         await fs.mkdir(directory, { recursive: true });
@@ -55,7 +55,7 @@ export const uploadItemImage = multer({
       }
     },
     filename: function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       cb(null, crypto.randomUUID() + path.extname(file.originalname));
     },
   }),
@@ -64,7 +64,7 @@ export const uploadItemImage = multer({
 export const uploadItemThumbnail = multer({
   storage: multer.diskStorage({
     destination: async function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       const directory = `public/items/${req.params.item_id}`;
       try {
         await fs.mkdir(directory, { recursive: true });
@@ -74,7 +74,7 @@ export const uploadItemThumbnail = multer({
       }
     },
     filename: function (req, file, cb) {
-      const user = req.user as UserOutput;
+      const user = req.user!;
       cb(null, "thumbnail" + path.extname(file.originalname));
     },
   }),

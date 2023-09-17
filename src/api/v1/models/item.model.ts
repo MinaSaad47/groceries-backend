@@ -43,8 +43,8 @@ export const ItemSchema = z.object({
  *           type: string
  *           default: 'KG'
  */
-export const CreateItemInputSchema = ItemSchema;
-export type CreateItemInput = TypeOf<typeof CreateItemInputSchema>;
+export const ItemCreateBodySchema = ItemSchema;
+export type ItemCreateBody = TypeOf<typeof ItemCreateBodySchema>;
 
 /**
  * @openapi
@@ -74,10 +74,10 @@ export type CreateItemInput = TypeOf<typeof CreateItemInputSchema>;
  *           type: string
  *           nullable: true
  */
-export const UpdateItemInputSchema = ItemSchema.extend({
+export const ItemUpdateBodySchema = ItemSchema.extend({
   offer_price: z.number().positive().optional(),
 }).partial();
-export type UpdateItemInput = z.infer<typeof UpdateItemInputSchema>;
+export type ItemUpdateBody = z.infer<typeof ItemUpdateBodySchema>;
 
 /**
  * @openapi
@@ -92,8 +92,8 @@ export type UpdateItemInput = z.infer<typeof UpdateItemInputSchema>;
  *           type: string
  *           format: uuid
  */
-export const GetItemInputSchema = z.object({ item_id: z.string().uuid() });
-export type GetItemInput = z.infer<typeof GetItemInputSchema>;
+export const ItemGetParamSchema = z.object({ item_id: z.string().uuid() });
+export type ItemGetParam = z.infer<typeof ItemGetParamSchema>;
 
 // outputs
 
@@ -129,7 +129,7 @@ export type GetItemInput = z.infer<typeof GetItemInputSchema>;
  *            items:
  *              type: string
  */
-export const ItemOutputSchema = ItemSchema.extend({
+export const ItemResBodySchema = ItemSchema.extend({
   item_id: z.string().uuid(),
   category: CategorySchema.nullish(),
   brand: BrandSchema.nullish(),
@@ -144,4 +144,4 @@ export const ItemOutputSchema = ItemSchema.extend({
     .nullish()
     .transform((obj) => obj ?? []),
 }).omit({ brand_id: true, category_id: true });
-export type ItemOutput = z.infer<typeof ItemOutputSchema>;
+export type ItemResBody = z.infer<typeof ItemResBodySchema>;

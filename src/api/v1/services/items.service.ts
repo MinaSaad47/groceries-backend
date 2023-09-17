@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import { CreateReviewInput } from "../models/review.model";
 import {
-  CreateItemInput,
-  ItemOutput,
-  ItemOutputSchema,
-  UpdateItemInput,
+  ItemCreateBody,
+  ItemResBody,
+  ItemResBodySchema,
+  ItemUpdateBody,
 } from "../models";
 
 export class ItemsService {
@@ -14,12 +14,12 @@ export class ItemsService {
     ItemsService.pool = pool;
   }
 
-  static async getAll(): Promise<ItemOutput[]> {
+  static async getAll(): Promise<ItemResBody[]> {
     const result = await this.pool.query("SELECT * FROM items_view");
-    return result.rows.map((item) => ItemOutputSchema.parse(item));
+    return result.rows.map((item) => ItemResBodySchema.parse(item));
   }
 
-  static async createOne(item: CreateItemInput): Promise<ItemOutput> {
+  static async createOne(item: ItemCreateBody): Promise<ItemResBody> {
     const query = `
         INSERT INTO items (category_id, brand_id, name, description, price, quantity, quantity_type)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -36,31 +36,31 @@ export class ItemsService {
     ];
     const result = await this.pool.query(query, values);
     const createdItem = result.rows[0];
-    return createdItem && ItemOutputSchema.parse(createdItem);
+    return createdItem && ItemResBodySchema.parse(createdItem);
   }
 
-  static async getOne(itemId: string): Promise<ItemOutput | null> {
+  static async getOne(itemId: string): Promise<ItemResBody | null> {
     const result = await this.pool.query(
       `SELECT * FROM items_view WHERE item_id = $1`,
       [itemId]
     );
     const item = result.rows[0];
-    return item && ItemOutputSchema.parse(item);
+    return item && ItemResBodySchema.parse(item);
   }
 
-  static async deleteOne(itemId: string): Promise<ItemOutput | null> {
+  static async deleteOne(itemId: string): Promise<ItemResBody | null> {
     const result = await this.pool.query(
       "DELETE FROM items WHERE item_id = $1  RETURNING *",
       [itemId]
     );
     const deletedItem = result.rows[0];
-    return deletedItem && ItemOutputSchema.parse(deletedItem);
+    return deletedItem && ItemResBodySchema.parse(deletedItem);
   }
 
   static async updateOne(
     itemId: string,
-    item: UpdateItemInput
-  ): Promise<ItemOutput | null> {
+    item: ItemUpdateBody
+  ): Promise<ItemResBody | null> {
     const query = `
     UPDATE items
     SET
@@ -86,13 +86,13 @@ export class ItemsService {
     ];
     const result = await this.pool.query(query, values);
     const updatedItem = result.rows[0];
-    return updatedItem && ItemOutputSchema.parse(updatedItem);
+    return updatedItem && ItemResBodySchema.parse(updatedItem);
   }
 
   static async addImage(
     itemId: string,
     image: string
-  ): Promise<ItemOutput | null> {
+  ): Promise<ItemResBody | null> {
     const query = `
     INSERT INTO item_images (item_id, image)
     VALUES ($1, $2)

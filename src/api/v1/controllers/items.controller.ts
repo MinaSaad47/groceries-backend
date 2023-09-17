@@ -1,22 +1,22 @@
 import { Request, Response } from "express";
 import { ItemsService, ReviewsService } from "@api/v1/services";
 import {
-  CreateItemInput,
-  GetItemInput,
-  ItemOutput,
-  UpdateItemInput,
-  UserOutput,
+  ItemCreateBody,
+  ItemGetParam,
+  ItemResBody,
+  ItemUpdateBody,
+  UserResBody,
 } from "../models";
 import { ReviewOutput, CreateReviewInput } from "../models/review.model";
 
-export const getAll = async (req: Request, res: Response<ItemOutput[]>) => {
+export const getAll = async (req: Request, res: Response<ItemResBody[]>) => {
   const items = await ItemsService.getAll();
   res.success({ data: items });
 };
 
 export const createOne = async (
-  req: Request<{}, {}, CreateItemInput>,
-  res: Response<ItemOutput>
+  req: Request<{}, {}, ItemCreateBody>,
+  res: Response<ItemResBody>
 ) => {
   const item = req.body;
   const createdItem = await ItemsService.createOne(item);
@@ -24,8 +24,8 @@ export const createOne = async (
 };
 
 export const getOne = async (
-  req: Request<GetItemInput, {}, {}>,
-  res: Response<ItemOutput>
+  req: Request<ItemGetParam, {}, {}>,
+  res: Response<ItemResBody>
 ) => {
   const itemId = req.params.item_id;
   const item = await ItemsService.getOne(itemId);
@@ -36,8 +36,8 @@ export const getOne = async (
 };
 
 export const deleteOne = async (
-  req: Request<GetItemInput, {}, {}>,
-  res: Response<ItemOutput>
+  req: Request<ItemGetParam, {}, {}>,
+  res: Response<ItemResBody>
 ) => {
   const itemId = req.params.item_id;
   const item = await ItemsService.deleteOne(itemId);
@@ -48,8 +48,8 @@ export const deleteOne = async (
 };
 
 export const updateOne = async (
-  req: Request<GetItemInput, {}, UpdateItemInput>,
-  res: Response<ItemOutput>
+  req: Request<ItemGetParam, {}, ItemUpdateBody>,
+  res: Response<ItemResBody>
 ) => {
   const itemId = req.params.item_id;
   const updatedItem = req.body;
@@ -61,8 +61,8 @@ export const updateOne = async (
 };
 
 export const addThumbnail = async (
-  req: Request<GetItemInput>,
-  res: Response<ItemOutput>
+  req: Request<ItemGetParam>,
+  res: Response<ItemResBody>
 ) => {
   const itemId = req.params.item_id;
   const thumbnail = req.file?.path;
@@ -75,8 +75,8 @@ export const addThumbnail = async (
 };
 
 export const addImage = async (
-  req: Request<GetItemInput>,
-  res: Response<ItemOutput>
+  req: Request<ItemGetParam>,
+  res: Response<ItemResBody>
 ) => {
   const itemId = req.params.item_id;
   const image = req.file?.path;
@@ -89,10 +89,10 @@ export const addImage = async (
 };
 
 export const addReview = async (
-  req: Request<GetItemInput, {}, CreateReviewInput>,
+  req: Request<ItemGetParam, {}, CreateReviewInput>,
   res: Response<ReviewOutput>
 ) => {
-  const user = req.user as UserOutput;
+  const user = req.user!;
   const itemId = req.params.item_id;
   const userId = user.user_id;
   const review = req.body;
@@ -105,7 +105,7 @@ export const addReview = async (
 };
 
 export const getAllReview = async (
-  req: Request<GetItemInput>,
+  req: Request<ItemGetParam>,
   res: Response<ReviewOutput[]>
 ) => {
   const itemId = req.params.item_id;

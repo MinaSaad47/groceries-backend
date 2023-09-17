@@ -1,16 +1,34 @@
 import "module-alias/register";
+// load .env file
 require("dotenv").config();
 
 import express from "express";
+
 import { config } from "@config";
-import routes from "@api/v1/routes";
-import logger from "@api/v1/utils/logger";
 import { pool } from "@api/v1/db";
+
+// routes
+import routes from "@api/v1/routes";
+
+// common middlewares
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import morgan from "morgan";
+
+// internationalization
 import i18next from "i18next";
 import Backend from "i18next-fs-backend";
 import i18nextHttpMiddleware from "i18next-http-middleware";
+
+// extensions
+import responseExtension from "@api/v1/utils/extensions/express.ext";
+import "@api/v1/utils/extensions/pg.ext";
+
+// utilities
+import swaggerDocs from "@api/v1/utils/swagger";
+import logger from "@api/v1/utils/logger";
+
+// services
 import {
   AddressesService,
   BrandsService,
@@ -19,11 +37,8 @@ import {
   ItemsService,
   ReviewsService,
   UsersService,
+  FavoritesService,
 } from "@api/v1/services";
-import { FavoritesService } from "@api/v1/services";
-import swaggerDocs from "@api/v1/utils/swagger";
-import responseExtension from "@api/v1/utils/responseExtension";
-import morgan from "morgan";
 
 ItemsService.setPool(pool);
 CategoriesService.setPool(pool);
@@ -33,6 +48,7 @@ FavoritesService.setPool(pool);
 CartsService.setPool(pool);
 AddressesService.setPool(pool);
 ReviewsService.setPool(pool);
+CartsService.setPool(pool);
 
 require("@api/v1/services/strategies");
 
@@ -53,7 +69,7 @@ i18next
 
 const app = express();
 
-app.use(morgan(isProduction ? "tiny" : "dev"), );
+app.use(morgan(isProduction ? "tiny" : "dev"));
 app.use(cors());
 app.use("/public", express.static("public"));
 app.use(i18nextHttpMiddleware.handle(i18next));

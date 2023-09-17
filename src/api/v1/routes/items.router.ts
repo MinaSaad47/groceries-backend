@@ -8,10 +8,10 @@ import {
 } from "@api/v1/middlewares";
 import { z } from "zod";
 import {
-  CreateItemInputSchema,
+  ItemCreateBodySchema,
   CreateReviewInputSchema,
-  GetItemInputSchema,
-  UpdateItemInputSchema,
+  ItemGetParamSchema,
+  ItemUpdateBodySchema,
 } from "../models";
 
 const router = express.Router();
@@ -55,33 +55,33 @@ router
   .route("/")
   .get(itemsController.getAll)
   .post(
-    [validateRequest(z.object({ body: CreateItemInputSchema }))],
+    [validateRequest(z.object({ body: ItemCreateBodySchema }))],
     itemsController.createOne
   );
 
 router
   .route("/:item_id")
-  .all([validateRequest(z.object({ params: GetItemInputSchema }))])
+  .all([validateRequest(z.object({ params: ItemGetParamSchema }))])
   .get(itemsController.getOne)
   .delete(itemsController.deleteOne)
   .patch(
-    [validateRequest(z.object({ body: UpdateItemInputSchema }))],
+    [validateRequest(z.object({ body: ItemUpdateBodySchema }))],
     itemsController.updateOne
   );
 
 router
   .route("/:item_id/upload-thumbnail")
-  .all([validateRequest(z.object({ params: GetItemInputSchema }))])
+  .all([validateRequest(z.object({ params: ItemGetParamSchema }))])
   .post(uploadItemThumbnail, itemsController.addThumbnail);
 
 router
   .route("/:item_id/upload-image")
-  .all([validateRequest(z.object({ params: GetItemInputSchema }))])
+  .all([validateRequest(z.object({ params: ItemGetParamSchema }))])
   .post(uploadItemImage, itemsController.addImage);
 
 router
   .route("/:item_id/reviews")
-  .all([requireJwt, validateRequest(z.object({ params: GetItemInputSchema }))])
+  .all([requireJwt, validateRequest(z.object({ params: ItemGetParamSchema }))])
   .get(itemsController.getAllReview)
   .post(
     [validateRequest(z.object({ body: CreateReviewInputSchema }))],

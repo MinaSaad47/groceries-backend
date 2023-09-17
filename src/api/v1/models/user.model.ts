@@ -16,17 +16,17 @@ export const UserSchema = z.object({
 });
 
 // inputs
-export const CreateUserInputSchema = UserSchema;
-export type CreateUserInput = z.infer<typeof CreateUserInputSchema>;
+export const UserCreateBodySchema = UserSchema;
+export type UserCreateBody = z.infer<typeof UserCreateBodySchema>;
 
-export const UpdateUserInputSchema = UserSchema.partial();
-export type UpdateUserInput = z.infer<typeof UpdateUserInputSchema>;
+export const UserUpdateBodySchema = UserSchema.partial();
+export type UserUpdateBody = z.infer<typeof UserUpdateBodySchema>;
 
-export const GetUserInputSchema = z.object({ user_id: z.string().uuid() });
-export type GetUserInput = z.infer<typeof GetUserInputSchema>;
+export const UserGetParamSchema = z.object({ user_id: z.string().uuid() });
+export type UserGetParam = z.infer<typeof UserGetParamSchema>;
 
 // outputs
-export const UserOutputSchema = UserSchema.extend({
+export const UserResBodySchema = UserSchema.extend({
   user_id: z.string().uuid(),
 });
-export type UserOutput = z.infer<typeof UserOutputSchema>;
+export type UserResBody = z.infer<typeof UserResBodySchema>;

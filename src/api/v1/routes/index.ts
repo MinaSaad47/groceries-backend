@@ -8,6 +8,7 @@ import authRouter from "./auth.router";
 import favoratesRouter from "./favorite.router";
 import profileRouter from "./profile.router";
 import addressesRouter from "./addresses.router";
+import cartsRouter from "./carts.router";
 import { requireJwt } from "../middlewares";
 
 export default function routes(app: Express) {
@@ -24,7 +25,7 @@ export default function routes(app: Express) {
    *        description: The API is healthy.
    */
   app.get("/health-check", (req: Request, res: Response) =>
-    res.sendStatus(200)
+    res.success({ i18n: { key: "healthcheck" } })
   );
 
   app.use("/auth", authRouter);
@@ -36,4 +37,5 @@ export default function routes(app: Express) {
   app.use("/api/v1/favorites", favoratesRouter);
   app.use("/api/v1/profile", profileRouter);
   app.use("/api/v1/addresses", addressesRouter);
+  app.use("/api/v1/carts", cartsRouter);
 }

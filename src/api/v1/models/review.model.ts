@@ -1,6 +1,6 @@
 import { TypeOf, z } from "zod";
-import { UserOutputSchema } from "./user.model";
-import { ItemOutputSchema } from "./item.model";
+import { UserResBodySchema } from "./user.model";
+import { ItemResBodySchema } from "./item.model";
 
 export const ReviewSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -21,6 +21,6 @@ export const ReviewOutputSchema = ReviewSchema.extend({
 export type ReviewOutput = z.infer<typeof ReviewOutputSchema>;
 
 export const ReviewWithUserOutputSchema = ReviewOutputSchema.extend({
-  user: UserOutputSchema,
+  user: UserResBodySchema,
 });
 export type ReviewWithUserOutput = z.infer<typeof ReviewWithUserOutputSchema>;
