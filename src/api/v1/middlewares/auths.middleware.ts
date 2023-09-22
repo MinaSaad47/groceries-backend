@@ -1,11 +1,15 @@
 import { NextFunction, Request, Response } from "express";
-import { UserResBody, UserRole } from "@api/v1/models";
 import passport from "passport";
+
+enum UserRole {
+  Admin = "admin",
+  User = "user",
+}
 
 export const authorizeRoles =
   (...roles: UserRole[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
-    const user: UserResBody = res.locals.user;
+    const user = res.locals.user;
     if (!roles.includes(user.role)) {
       return res.fail({
         code: 401,

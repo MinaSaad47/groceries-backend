@@ -1,0 +1,1 @@
+ALTER TABLE "item_images" ALTER COLUMN "item_id" SET NOT NULL;

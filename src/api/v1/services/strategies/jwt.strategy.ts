@@ -1,7 +1,14 @@
 import passport from "passport";
-import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
-import { UsersService } from "../users.service";
+import {
+  Strategy as JwtStrategy,
+  ExtractJwt,
+  VerifiedCallback,
+} from "passport-jwt";
 import { Request } from "express";
+import { db } from "@api/v1/db";
+import { eq } from "drizzle-orm";
+import { users } from "@api/v1/db/schema";
+import log from "@api/v1/utils/logger";
 
 const isProduction = process.env.NODE_ENV === "production";
 const secretOrKey = isProduction
@@ -26,8 +33,10 @@ passport.use(
       ]),
       secretOrKey,
     },
-    async (payload, done) => {
-      const user = await UsersService.getOne(payload.id);
+    async (payload: any, done: VerifiedCallback) => {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, payload.id),
+      });
       if (user) {
         return done(null, user);
       }

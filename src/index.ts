@@ -2,13 +2,24 @@ import "module-alias/register";
 // load .env file
 require("dotenv").config();
 
+// validation and openapi
+import {
+  OpenApiGeneratorV3,
+  OpenApiGeneratorV31,
+  extendZodWithOpenApi,
+} from "@asteasolutions/zod-to-openapi";
+import { z } from "zod";
+import YAML from "yaml";
+
+extendZodWithOpenApi(z);
+
 import express from "express";
+import "express-async-errors";
+import swaggerUi from "swagger-ui-express";
 
 import { config } from "@config";
-import { pool } from "@api/v1/db";
 
-// routes
-import routes from "@api/v1/routes";
+require("@api/v1/services/strategies");
 
 // common middlewares
 import cookieParser from "cookie-parser";
@@ -25,32 +36,28 @@ import responseExtension from "@api/v1/utils/extensions/express.ext";
 import "@api/v1/utils/extensions/pg.ext";
 
 // utilities
-import swaggerDocs from "@api/v1/utils/swagger";
 import logger from "@api/v1/utils/logger";
 
-// services
-import {
-  AddressesService,
-  BrandsService,
-  CartsService,
-  CategoriesService,
-  ItemsService,
-  ReviewsService,
-  UsersService,
-  FavoritesService,
-} from "@api/v1/services";
+import { db, applyMigrations } from "@api/v1/db";
 
-ItemsService.setPool(pool);
-CategoriesService.setPool(pool);
-BrandsService.setPool(pool);
-UsersService.setPool(pool);
-FavoritesService.setPool(pool);
-CartsService.setPool(pool);
-AddressesService.setPool(pool);
-ReviewsService.setPool(pool);
-CartsService.setPool(pool);
+import { registry } from "@api/v1/utils/openapi/registery";
 
-require("@api/v1/services/strategies");
+import { UserController } from "@api/v1/resources/users/users.controller";
+import { UsersService } from "@api/v1/resources/users/users.service";
+
+import { ItemsService } from "@api/v1/resources/items/items.service";
+import { AuthController } from "@api/v1/resources/auth/auth.controller";
+import { ProfileController } from "@api/v1/resources/profile/profile.controller";
+import { ProfileService } from "@api/v1/resources/profile/profile.service";
+import { CartsService } from "@api/v1/resources/carts/carts.service";
+import { CartsController } from "@api/v1/resources/carts/carts.controller";
+import { handleErrorMiddleware } from "@api/v1/middlewares/error.middleware";
+import { WebhooksControoler } from "@api/v1/resources/webhooks/webhooks.controller";
+import { ItemsController } from "@api/v1/resources/items/items.controller";
+import { CategoriesService } from "@api/v1/resources/categories/categories.serivce";
+import { CategoriesController } from "@api/v1/resources/categories/categories.controller";
+import { BrandsService } from "@api/v1/resources/brands/brands.serivce";
+import { BrandsController } from "@api/v1/resources/brands/brands.controller";
 
 const isProduction = process.env.NODE_ENV === "production";
 const secretOrKey = isProduction
@@ -79,12 +86,50 @@ app.use(cookieParser(secretOrKey));
 app.use(responseExtension);
 
 async function main() {
-  logger.debug(`Config: ${JSON.stringify(config, null, 4)}`);
+  await applyMigrations();
+
   app.listen(config.app.port, () =>
     logger.info(`App is listening on port ${config.app.port}`)
   );
-  routes(app);
-  swaggerDocs(app, config.app.port);
+
+  const usersService = new UsersService(db);
+  const profileService = new ProfileService(db);
+  const itemsServices = new ItemsService(db);
+  const cartsService = new CartsService(db);
+  const categoriesService = new CategoriesService(db);
+  const brandsService = new BrandsService(db);
+
+  const controllers = [
+    new AuthController("/auth"),
+    new UserController("/api/v1/users", usersService),
+    new ProfileController("/api/v1/profile", profileService),
+    new ItemsController("/api/v1/items", itemsServices),
+    new CartsController("/api/v1/profile/carts", cartsService),
+    new CategoriesController("/api/v1/categories", categoriesService),
+    new BrandsController("/api/v1/brands", brandsService),
+    new WebhooksControoler("/webhooks", cartsService),
+  ];
+
+  app.post("/webhock", async (req, res) => {});
+
+  controllers.forEach((ctrl) => app.use(ctrl.path, ctrl.router));
+  app.use(handleErrorMiddleware);
+
+  const openapi = new OpenApiGeneratorV31(registry.definitions);
+  const docs = openapi.generateDocument({
+    info: {
+      version: "1.0.0",
+      title: "groceries-backend",
+      description: "api docs",
+    },
+    servers: [{ url: "/api/v1" }],
+    openapi: "3.0.1",
+  });
+
+  app.use("/api/v1/docs", swaggerUi.serve);
+  app.use("/api/v1/docs", (req, res, next) => {
+    return swaggerUi.setup(docs)(req, res, next);
+  });
 }
 
 main();

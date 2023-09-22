@@ -1,6 +1,44 @@
-import { Pool, types } from "pg";
-import { config } from "../../../config";
+import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
+import log from "@api/v1/utils/logger";
 
-types.setTypeParser(types.builtins.NUMERIC, (value) => parseFloat(value));
+import * as schema from "./schema";
+import { Logger } from "drizzle-orm";
+import { format } from "sql-formatter";
 
-export const pool = new Pool({ connectionString: config.db.url });
+const dbUrl: string = process.env.DATABASE_URL!;
+
+export const applyMigrations = async () => {
+  log.debug("CHECKING FOR DATABASE MIGRATIONS");
+  try {
+    const migrationClient = postgres(dbUrl, { max: 1, ssl: "require" });
+    await migrate(drizzle(migrationClient), { migrationsFolder: "./drizzle" });
+  } catch (err) {
+    log.fatal(err);
+    process.exit(1);
+  }
+};
+
+class CustomLogger implements Logger {
+  logQuery(query: string, params: unknown[]): void {
+    if (log.level === "trace") {
+      query = format(query, { language: "postgresql", keywordCase: "upper" });
+    }
+    log.trace(
+      `PERFORMING DATABASE CALL
+params:
+%o
+query:
+%o`,
+      params,
+      query
+    );
+  }
+}
+
+export type Database = PostgresJsDatabase<typeof schema>;
+export const db = drizzle(postgres(dbUrl, { ssl: "require" }), {
+  schema,
+  logger: new CustomLogger(),
+});

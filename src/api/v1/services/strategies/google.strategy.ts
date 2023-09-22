@@ -3,9 +3,11 @@ import {
   Strategy as GoogleStrategy,
   VerifyCallback,
 } from "passport-google-oauth2";
-import { UsersService } from "../users.service";
 import { Request } from "express";
-import { UserSchema } from "@api/v1/models";
+import { userCreateBody } from "@api/v1/resources/users/users.validation";
+import { db } from "@api/v1/db";
+import { eq } from "drizzle-orm";
+import { users } from "@api/v1/db/schema";
 
 passport.use(
   new GoogleStrategy(
@@ -22,17 +24,20 @@ passport.use(
       profile: any,
       done: VerifyCallback
     ) => {
-      console.log({ accessToken, refreshToken });
-      let user = await UsersService.findByEmail(profile.email);
+      let user = await db.query.users.findFirst({
+        where: eq(users.email, profile.email),
+      });
       if (user) {
         return done(null, user);
       }
-      user = await UsersService.createOne(
-        UserSchema.parse({
-          username: `user${profile.id}`,
-          email: profile.email,
-        })
-      );
+      [user] = await db
+        .insert(users)
+        .values(
+          userCreateBody.parse({
+            email: profile.email,
+          })
+        )
+        .returning();
       done(null, user);
     }
   )

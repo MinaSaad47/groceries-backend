@@ -15,7 +15,7 @@ export default function responseExtension(
         : req.t(`success.${code}.${i18n.key}`, i18n.args),
     });
   };
-  res.fail = ({ i18n, code = 400, data }: FailBody): void => {
+  res.fail = ({ i18n, code = 400, details: data }: FailBody): void => {
     res.status(code).json({
       code,
       status: "fail",
@@ -23,7 +23,7 @@ export default function responseExtension(
       data,
     });
   };
-  res.error = ({ i18n, data, code = 500 }: ErrorBody): void => {
+  res.error = ({ i18n, details: data, code = 500 }: ErrorBody): void => {
     res.status(code).json({
       code,
       status: "error",
