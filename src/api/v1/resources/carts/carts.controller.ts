@@ -24,7 +24,6 @@ export class CartsController implements Controller {
     this.path = path;
     this.router = Router();
     this.cartsService = cartsService;
-    this.router.use(requireJwt);
 
     this.initializeRoutes();
   }
@@ -144,6 +143,7 @@ export class CartsController implements Controller {
       },
     });
 
+    this.router.use(requireJwt);
     this.router.route("/").post(this.createOne).get(this.getAll);
 
     this.router

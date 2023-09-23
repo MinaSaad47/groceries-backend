@@ -3,6 +3,7 @@ import { Request, Response, Router } from "express";
 import Controller from "@api/v1/utils/interfaces/controller.interface";
 import { ItemsService } from "./items.service";
 import {
+  authorizeRoles,
   requireJwt,
   uploadItemImage,
   uploadItemThumbnail,
@@ -191,10 +192,15 @@ export class ItemsController implements Controller {
       },
     });
 
+    this.router.use(requireJwt);
+
     this.router
       .route("/")
       .post(
-        validateRequest(z.object({ body: CreateItemSchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: CreateItemSchema })),
+        ],
         this.createOne
       )
       .get(this.getAll);
@@ -204,19 +210,28 @@ export class ItemsController implements Controller {
       .all(validateRequest(z.object({ params: SelectItemSchema })))
       .get(this.getOne)
       .patch(
-        validateRequest(z.object({ body: UpdateItemSchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: UpdateItemSchema })),
+        ],
         this.updateOne
       )
       .delete(this.deleteOne);
 
     this.router
       .route("/:itemId/image")
-      .all(validateRequest(z.object({ params: SelectItemSchema })))
+      .all([
+        authorizeRoles("admin"),
+        validateRequest(z.object({ params: SelectItemSchema })),
+      ])
       .post(uploadItemImage, this.addImage);
 
     this.router
       .route("/:itemId/thumbnail")
-      .all(validateRequest(z.object({ params: SelectItemSchema })))
+      .all([
+        authorizeRoles("admin"),
+        validateRequest(z.object({ params: SelectItemSchema })),
+      ])
       .post(uploadItemThumbnail, this.uploadThumbnail);
 
     this.router

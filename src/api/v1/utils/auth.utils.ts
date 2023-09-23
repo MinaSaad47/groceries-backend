@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { User } from "../resources/users/users.type";
+import { User } from "../db/schema";
 
 const isProduction = process.env.NODE_ENV === "production";
 

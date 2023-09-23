@@ -14,6 +14,7 @@ import {
 
 // Define an enum for user roles
 export const userRole = pgEnum("user_role", ["admin", "user"]);
+export type UserRole = typeof userRole.enumValues[number]
 
 // Define the "users" table
 export const users = pgTable("users", {

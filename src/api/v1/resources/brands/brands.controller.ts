@@ -8,7 +8,7 @@ import {
   UpdateBrand,
   UpdateBrandSchema,
 } from "./brands.validation";
-import { validateRequest } from "../../middlewares";
+import { authorizeRoles, requireJwt, validateRequest } from "../../middlewares";
 import { z } from "zod";
 import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { BrandsService } from "./brands.serivce";
@@ -100,17 +100,25 @@ export class BrandsController implements Controller {
       },
     });
 
+    this.router.use([requireJwt]);
+
     this.router
       .route("/")
       .get(this.getAll)
       .post(
-        validateRequest(z.object({ body: CreateBrandSchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: CreateBrandSchema })),
+        ],
         this.addOne
       );
 
     this.router
       .route("/:brandId")
-      .all(validateRequest(z.object({ params: SelectBrandSchema })))
+      .all([
+        authorizeRoles("admin"),
+        validateRequest(z.object({ params: SelectBrandSchema })),
+      ])
       .delete(this.deleteOne)
       .patch(
         validateRequest(z.object({ body: UpdateBrandSchema })),

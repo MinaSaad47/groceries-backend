@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 
 import Controller from "@api/v1/utils/interfaces/controller.interface";
 
-import { validateRequest } from "@api/v1/middlewares";
+import { authorizeRoles, validateRequest } from "@api/v1/middlewares";
 import { z } from "zod";
 import { UsersService } from "./users.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
@@ -13,7 +13,11 @@ import {
   SelectUserSchema,
   UpdateUserSchema,
 } from "./users.validation";
-import { bearerAuth, oauth2Auth, registry } from "@api/v1/utils/openapi/registery";
+import {
+  bearerAuth,
+  oauth2Auth,
+  registry,
+} from "@api/v1/utils/openapi/registery";
 
 export class UserController implements Controller {
   public path: string;
@@ -108,7 +112,10 @@ export class UserController implements Controller {
     this.router
       .route("/")
       .post(
-        validateRequest(z.object({ body: CreateUserSchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: CreateUserSchema })),
+        ],
         this.createOne
       )
       .get(this.getAll);
@@ -118,10 +125,13 @@ export class UserController implements Controller {
       .all(validateRequest(z.object({ params: SelectUserSchema })))
       .get(this.getOne)
       .patch(
-        validateRequest(z.object({ body: UpdateUserSchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: UpdateUserSchema })),
+        ],
         this.updateOne
       )
-      .delete(this.deleteOne);
+      .delete(authorizeRoles("admin"), this.deleteOne);
   }
 
   private createOne: RequestHandler<{}, CreateUser> = async (req, res) => {

@@ -10,7 +10,12 @@ import {
   UpdateCategorySchema,
 } from "./categories.validation";
 import { CategoriesService } from "./categories.serivce";
-import { uploadCategoryImage, validateRequest } from "../../middlewares";
+import {
+  authorizeRoles,
+  requireJwt,
+  uploadCategoryImage,
+  validateRequest,
+} from "../../middlewares";
 import { z } from "zod";
 import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
@@ -130,26 +135,37 @@ export class CategoriesController implements Controller {
       },
     });
 
+    this.router.use(requireJwt);
+
     this.router
       .route("/")
       .get(this.getAll)
       .post(
-        validateRequest(z.object({ body: CreateCategorySchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: CreateCategorySchema })),
+        ],
         this.addOne
       );
 
     this.router
       .route("/:categoryId")
       .all(validateRequest(z.object({ params: SelectCategorySchema })))
-      .delete(this.deleteOne)
+      .delete(authorizeRoles("admin"), this.deleteOne)
       .patch(
-        validateRequest(z.object({ body: UpdateCategorySchema })),
+        [
+          authorizeRoles("admin"),
+          validateRequest(z.object({ body: UpdateCategorySchema })),
+        ],
         this.updateOne
       );
 
     this.router
       .route("/:categoryId/image")
-      .all(validateRequest(z.object({ params: SelectCategorySchema })))
+      .all([
+        authorizeRoles("admin"),
+        validateRequest(z.object({ params: SelectCategorySchema })),
+      ])
       .post(uploadCategoryImage, this.uploadImage);
 
     this.router
