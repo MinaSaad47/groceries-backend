@@ -1,7 +1,6 @@
+import fs from "fs/promises";
 import multer from "multer";
 import path from "path";
-import fs from "fs/promises";
-import { Request } from "express";
 
 export const uploadProfilePicture = multer({
   storage: multer.diskStorage({
