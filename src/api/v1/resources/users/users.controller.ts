@@ -1,11 +1,16 @@
-import { Request, Response, Router } from "express";
+import { Router } from "express";
 
 import Controller from "@api/v1/utils/interfaces/controller.interface";
 
-import { authorizeRoles, validateRequest } from "@api/v1/middlewares";
+import {
+  authorizeRoles,
+  requireJwt,
+  validateRequest,
+} from "@api/v1/middlewares";
+import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { z } from "zod";
 import { UsersService } from "./users.service";
-import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
 import {
   CreateUser,
   CreateUserSchema,
@@ -13,11 +18,6 @@ import {
   SelectUserSchema,
   UpdateUserSchema,
 } from "./users.validation";
-import {
-  bearerAuth,
-  oauth2Auth,
-  registry,
-} from "@api/v1/utils/openapi/registery";
 
 export class UserController implements Controller {
   public path: string;
@@ -108,6 +108,8 @@ export class UserController implements Controller {
         },
       },
     });
+
+    this.router.use(requireJwt);
 
     this.router
       .route("/")
