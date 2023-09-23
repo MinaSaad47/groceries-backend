@@ -19,7 +19,7 @@ import {
   UpdateItemSchema,
 } from "./items.validation";
 import { z } from "zod";
-import { registry } from "@api/v1/utils/openapi/registery";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class ItemsController implements Controller {
   public path: string;
@@ -50,6 +50,7 @@ export class ItemsController implements Controller {
       tags: ["items"],
       path: "/items",
       method: "post",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "create an item",
       request: {
         body: {
@@ -57,7 +58,7 @@ export class ItemsController implements Controller {
         },
       },
       responses: {
-        200: {
+        201: {
           description: "created item",
         },
       },
@@ -82,6 +83,7 @@ export class ItemsController implements Controller {
       tags: ["items"],
       path: "/items/{itemId}",
       method: "patch",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "update an item",
       request: {
         params: SelectItemSchema,
@@ -113,6 +115,7 @@ export class ItemsController implements Controller {
       tags: ["items"],
       path: "/items/{itemId}/image",
       method: "post",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "upload an item image",
       request: {
         params: SelectItemSchema,
@@ -141,6 +144,7 @@ export class ItemsController implements Controller {
       tags: ["items"],
       path: "/items/{itemId}/thumbnail",
       method: "post",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "upload an item thumbnail",
       request: {
         params: SelectItemSchema,

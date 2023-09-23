@@ -4,7 +4,7 @@ import {
   VerifyCallback,
 } from "passport-google-oauth2";
 import { Request } from "express";
-import { userCreateBody } from "@api/v1/resources/users/users.validation";
+import { CreateUserSchema } from "@api/v1/resources/users/users.validation";
 import { db } from "@api/v1/db";
 import { eq } from "drizzle-orm";
 import { users } from "@api/v1/db/schema";
@@ -33,7 +33,7 @@ passport.use(
       [user] = await db
         .insert(users)
         .values(
-          userCreateBody.parse({
+          CreateUserSchema.parse({
             email: profile.email,
           })
         )

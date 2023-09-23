@@ -10,7 +10,7 @@ import {
 } from "./brands.validation";
 import { validateRequest } from "../../middlewares";
 import { z } from "zod";
-import { registry } from "@api/v1/utils/openapi/registery";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { BrandsService } from "./brands.serivce";
 
 export class BrandsController implements Controller {
@@ -28,6 +28,7 @@ export class BrandsController implements Controller {
       tags: ["brands"],
       path: "/brands",
       method: "post",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "create a brand",
       request: {
         body: {
@@ -35,7 +36,7 @@ export class BrandsController implements Controller {
         },
       },
       responses: {
-        200: {
+        201: {
           description: "created brand",
         },
       },
@@ -53,6 +54,7 @@ export class BrandsController implements Controller {
       tags: ["brands"],
       path: "/brands/{brandId}",
       method: "patch",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "update specific brand",
       request: {
         params: SelectBrandSchema,
@@ -71,6 +73,7 @@ export class BrandsController implements Controller {
       tags: ["brands"],
       path: "/brands/{brandId}",
       method: "delete",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "delete specific brand",
       request: {
         params: SelectBrandSchema,

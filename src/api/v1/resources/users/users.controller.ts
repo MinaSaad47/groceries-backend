@@ -13,7 +13,7 @@ import {
   SelectUserSchema,
   UpdateUserSchema,
 } from "./users.validation";
-import { registry } from "@api/v1/utils/openapi/registery";
+import { bearerAuth, oauth2Auth, registry } from "@api/v1/utils/openapi/registery";
 
 export class UserController implements Controller {
   public path: string;
@@ -33,13 +33,14 @@ export class UserController implements Controller {
       path: "/users",
       method: "post",
       summary: "create an user",
+      security: [{ [bearerAuth.name]: [] }],
       request: {
         body: {
           content: { "application/json": { schema: CreateUserSchema } },
         },
       },
       responses: {
-        200: {
+        201: {
           description: "created user",
         },
       },
@@ -58,6 +59,7 @@ export class UserController implements Controller {
       method: "get",
       summary: "get user by id",
       path: "/users/{userId}",
+      security: [{ [bearerAuth.name]: [] }],
       request: {
         params: SelectUserSchema,
       },
@@ -71,6 +73,7 @@ export class UserController implements Controller {
     registry.registerPath({
       tags: ["users"],
       path: "/users/{userId}",
+      security: [{ [bearerAuth.name]: [] }],
       method: "patch",
       summary: "update specific user",
       request: {
@@ -89,6 +92,7 @@ export class UserController implements Controller {
     registry.registerPath({
       tags: ["users"],
       path: "/users/{userId}",
+      security: [{ [bearerAuth.name]: [] }],
       method: "delete",
       summary: "delete specific user",
       request: {

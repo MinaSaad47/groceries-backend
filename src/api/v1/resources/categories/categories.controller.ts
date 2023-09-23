@@ -12,7 +12,7 @@ import {
 import { CategoriesService } from "./categories.serivce";
 import { uploadCategoryImage, validateRequest } from "../../middlewares";
 import { z } from "zod";
-import { registry } from "@api/v1/utils/openapi/registery";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class CategoriesController implements Controller {
   path: string;
@@ -29,6 +29,7 @@ export class CategoriesController implements Controller {
       tags: ["categories"],
       path: "/categories",
       method: "post",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "create a category",
       request: {
         body: {
@@ -36,7 +37,7 @@ export class CategoriesController implements Controller {
         },
       },
       responses: {
-        200: {
+        201: {
           description: "created category",
         },
       },
@@ -54,6 +55,7 @@ export class CategoriesController implements Controller {
       tags: ["categories"],
       path: "/categories/{categoryId}",
       method: "patch",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "update specific category",
       request: {
         params: SelectCategorySchema,
@@ -72,6 +74,7 @@ export class CategoriesController implements Controller {
       tags: ["categories"],
       path: "/categories/{categoryId}",
       method: "delete",
+      security: [{ [bearerAuth.name]: [] }],
       summary: "delete specific category",
       request: {
         params: SelectCategorySchema,
@@ -88,6 +91,7 @@ export class CategoriesController implements Controller {
       path: "/categories/{categoryId}/image",
       method: "post",
       summary: "upload category image",
+      security: [{ [bearerAuth.name]: [] }],
       request: {
         params: SelectCategorySchema,
         body: {

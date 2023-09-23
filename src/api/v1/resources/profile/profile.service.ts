@@ -1,7 +1,8 @@
 import { Database } from "@api/v1/db";
 import { favorites, users } from "@api/v1/db/schema";
 import { and, eq } from "drizzle-orm";
-import { UserUpdateBody } from "../users/users.type";
+import { UpdateUser } from "../users/users.validation";
+import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
 
 export class ProfileService {
   private db: Database;
@@ -11,19 +12,32 @@ export class ProfileService {
   }
 
   public async getOne(userId: string) {
-    return await this.db.query.users.findFirst({
+    const user = await this.db.query.users.findFirst({
       where: eq(users.id, userId),
       with: { addresses: true, reviews: true, carts: true },
     });
+
+    if (!user) {
+    }
+
+    return user;
   }
 
-  public async updateOne(userId: string, body: UserUpdateBody) {
+  public async updateOne(
+    userId: string,
+    body: UpdateUser & { profilePicture?: string }
+  ) {
     return await this.db.transaction(async (tx) => {
       const [user] = await tx
         .update(users)
         .set(body)
         .where(eq(users.id, userId))
         .returning();
+
+      if (!user) {
+        throw new NotFoundError("users", userId);
+      }
+
       return await tx.query.users.findFirst({
         where: eq(users.id, user.id),
         with: { addresses: true, reviews: true, carts: true },

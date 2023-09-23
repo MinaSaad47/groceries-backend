@@ -13,6 +13,7 @@ import {
   SelectCartToItemSchema,
 } from "./carts.validation";
 import { z } from "zod";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class CartsController implements Controller {
   public path: string;
@@ -29,15 +30,129 @@ export class CartsController implements Controller {
   }
 
   private initializeRoutes() {
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts",
+      method: "post",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "create a cart",
+      responses: {
+        201: {
+          description: "created cart",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts",
+      method: "get",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "get all cart for the sigend profile",
+      responses: {
+        200: {
+          description: "created cart",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts/{cartId}",
+      method: "get",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "get details about specific cart",
+      request: {
+        params: SelectCartSchema,
+      },
+      responses: {
+        200: {
+          description: "created cart",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts/{cartId}/checkout",
+      method: "post",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "checkout the cart and create order",
+      request: {
+        params: SelectCartSchema,
+      },
+      responses: {
+        200: {
+          description:
+            "stripe publishable key, client secret and order details",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts/{cartId}/items",
+      method: "post",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "add item to cart",
+      request: {
+        params: SelectCartSchema,
+        body: {
+          content: {
+            "application/json": {
+              schema: CreateCartToItemSchema,
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "added item",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts/{cartId}/items/{itemId}",
+      method: "delete",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "remove item from cart",
+      request: {
+        params: SelectCartToItemSchema,
+      },
+      responses: {
+        200: {
+          description: "deleted item",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts/{cartId}/order",
+      method: "delete",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "cancel the order of the cart",
+      request: {
+        params: SelectCartSchema,
+      },
+      responses: {
+        200: {
+          description: "canceled order",
+        },
+      },
+    });
+
     this.router.route("/").post(this.createOne).get(this.getAll);
 
     this.router
       .route("/:cartId")
-      .all(validateRequest(z.object({ params: SelectCartToItemSchema })))
+      .all(validateRequest(z.object({ params: SelectCartSchema })))
       .get(this.getOne);
     this.router
       .route("/:cartId/checkout")
-      .all(validateRequest(z.object({ params: SelectCartToItemSchema })))
+      .all(validateRequest(z.object({ params: SelectCartSchema })))
       .post(this.checkout);
 
     this.router
