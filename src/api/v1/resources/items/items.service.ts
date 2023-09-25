@@ -1,7 +1,7 @@
 import { Database } from "@api/v1/db";
 import { images, items, reviews } from "@api/v1/db/schema";
-import { eq, sql } from "drizzle-orm";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
+import { eq } from "drizzle-orm";
 import { CreateItem, CreateItemReview, UpdateItem } from "./items.validation";
 
 export class ItemsService {
@@ -94,6 +94,7 @@ export class ItemsService {
     const [inserted] = await this.db
       .update(items)
       .set({ thumbnail })
+      .where(eq(items.id, itemId))
       .returning({ thumbnail: items.thumbnail });
 
     if (!inserted) {
