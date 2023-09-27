@@ -11,7 +11,7 @@ export const CreateItemSchema = createInsertSchema(items)
   .openapi("CreateItemSchema", {
     default: {
       name: faker.commerce.product(),
-      price: faker.commerce.price(),
+      price: parseFloat(faker.commerce.price()),
       description: faker.commerce.productDescription(),
       quantity: 30,
       quantityType: "KG",
@@ -31,16 +31,11 @@ export const SelectItemSchema = z
 export type SelectItem = z.infer<typeof SelectItemSchema>;
 
 export const CreateItemReviewSchema = createInsertSchema(reviews, {
-  rating: (_) =>
-    z
-      .number()
-      .min(1)
-      .max(5)
-      .transform((arg) => arg.toString()),
+  rating: (_) => z.number().min(1).max(5),
 })
   .omit({ userId: true, itemId: true, createdAt: true })
   .openapi("CreateItemReviewSchema", {
-    default: { rating: "3.4", comment: faker.lorem.paragraph() },
+    default: { rating: 3.4, comment: faker.lorem.paragraph() },
   });
 export type CreateItemReview = z.infer<typeof CreateItemReviewSchema>;
 
