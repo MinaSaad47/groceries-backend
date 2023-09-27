@@ -1,5 +1,6 @@
 import { Database } from "@api/v1/db";
 import { images, items, reviews } from "@api/v1/db/schema";
+import { ImageUploadService } from "@api/v1/services/image_upload.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
 import { eq } from "drizzle-orm";
 import { CreateItem, CreateItemReview, UpdateItem } from "./items.validation";
@@ -78,9 +79,14 @@ export class ItemsService {
   }
 
   public async addImage(itemId: string, image: string) {
+    const url = await ImageUploadService.uploadImage(
+      `items/${itemId}/images`,
+      image
+    );
+
     const [inserted] = await this.db
       .insert(images)
-      .values({ image, itemId })
+      .values({ image: url, itemId })
       .returning({ image: images.image });
 
     if (!inserted) {
@@ -91,9 +97,14 @@ export class ItemsService {
   }
 
   public async addThumbnail(itemId: string, thumbnail: string) {
+    const url = await ImageUploadService.uploadImage(
+      `items/${itemId}`,
+      thumbnail,
+      "thumbnail"
+    );
     const [inserted] = await this.db
       .update(items)
-      .set({ thumbnail })
+      .set({ thumbnail: url })
       .where(eq(items.id, itemId))
       .returning({ thumbnail: items.thumbnail });
 

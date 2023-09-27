@@ -1,6 +1,15 @@
+import { ImageUploadService } from "@api/v1/services/image_upload.service";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { Router } from "express";
+import { z } from "zod";
+import {
+  authorizeRoles,
+  requireJwt,
+  uploadCategoryImage,
+  validateRequest,
+} from "../../middlewares";
 import Controller from "../../utils/interfaces/controller.interface";
-import { Database } from "../../db";
+import { CategoriesService } from "./categories.serivce";
 import {
   CreateCategory,
   CreateCategorySchema,
@@ -9,15 +18,6 @@ import {
   UpdateCategory,
   UpdateCategorySchema,
 } from "./categories.validation";
-import { CategoriesService } from "./categories.serivce";
-import {
-  authorizeRoles,
-  requireJwt,
-  uploadCategoryImage,
-  validateRequest,
-} from "../../middlewares";
-import { z } from "zod";
-import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class CategoriesController implements Controller {
   path: string;
@@ -208,9 +208,14 @@ export class CategoriesController implements Controller {
 
   private uploadImage: RequestHandler<SelectCategory> = async (req, res) => {
     const image = req.file?.path;
+    const url = await ImageUploadService.uploadImage(
+      `categories/${req.params.categoryId}`,
+      image!,
+      "image"
+    );
     const category = await this.categoriesService.updateOne(
       req.params.categoryId,
-      { image }
+      { image: url }
     );
     return res.success({ data: category, i18n: { key: "categories.update" } });
   };
