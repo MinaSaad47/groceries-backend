@@ -1,16 +1,16 @@
-import Controller from "@api/v1/utils/interfaces/controller.interface";
-import { Request, Response, Router } from "express";
-import { UsersService } from "../users/users.service";
 import { requireJwt, uploadProfilePicture } from "@api/v1/middlewares";
-import { ProfileService } from "./profile.service";
+import { ImageUploadService } from "@api/v1/services/image_upload.service";
+import Controller from "@api/v1/utils/interfaces/controller.interface";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
+import { Router } from "express";
 import { UpdateUser, UpdateUserSchema } from "../users/users.validation";
+import { ProfileService } from "./profile.service";
 import {
   CreateProfileFavorite,
   CreateProfileFavoriteSchema,
   SelectProfileFavorite,
   SelectProfileFavoriteSchema,
 } from "./profile.validation";
-import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class ProfileController implements Controller {
   public path: string;
@@ -206,9 +206,17 @@ export class ProfileController implements Controller {
   private addPicture: RequestHandler = async (req, res) => {
     let user = req.user!;
     const path = req.file?.path;
+
+    const url = await ImageUploadService.uploadImage(
+      `users/${user.id}`,
+      path!,
+      "picture"!
+    );
+
     const updatedUser = await this.profileSerivce.updateOne(user.id, {
-      profilePicture: path,
+      profilePicture: url,
     });
+
     res.success({ data: updatedUser, i18n: { key: "profile.update.picture" } });
   };
 }

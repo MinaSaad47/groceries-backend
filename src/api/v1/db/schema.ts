@@ -1,7 +1,7 @@
 import { InferSelectModel, relations } from "drizzle-orm";
 import {
   date,
-  decimal,
+  doublePrecision,
   integer,
   numeric,
   pgEnum,
@@ -14,7 +14,7 @@ import {
 
 // Define an enum for user roles
 export const userRole = pgEnum("user_role", ["admin", "user"]);
-export type UserRole = typeof userRole.enumValues[number]
+export type UserRole = (typeof userRole.enumValues)[number];
 
 // Define the "users" table
 export const users = pgTable("users", {
@@ -42,8 +42,8 @@ export const addresses = pgTable("addresses", {
   buildingNumber: varchar("building_number", { length: 255 }),
   apartmentNumber: varchar("appartment_number", { length: 255 }),
   floorNumber: varchar("floor_number", { length: 255 }),
-  lat: decimal("lat"),
-  long: decimal("long"),
+  lat: doublePrecision("lat"),
+  long: doublePrecision("lng"),
 });
 export const addressesRelations = relations(addresses, ({ one }) => ({
   user: one(users, { fields: [addresses.userId], references: [users.id] }),
@@ -76,8 +76,8 @@ export const items = pgTable("items", {
   name: varchar("name", { length: 255 }).notNull(),
   thumbnail: varchar("thumbnail", { length: 255 }),
   description: text("description"),
-  price: decimal("price").notNull(),
-  offerPrice: decimal("offer_price"),
+  price: doublePrecision("price").notNull(),
+  offerPrice: doublePrecision("offer_price"),
   quantity: integer("quantity").notNull(),
   quantityType: varchar("quantity_type", { length: 50 }).notNull(),
 });
@@ -150,7 +150,7 @@ export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   paymentIntentId: text("paymeny_indent_id").notNull(),
   orderDate: date("order_date").defaultNow(),
-  totalPrice: decimal("total_amount").notNull(),
+  totalPrice: numeric("total_amount").notNull(),
   status: orderStatus("status").default("pending"),
   cartId: uuid("cart_id")
     .notNull()
@@ -171,7 +171,7 @@ export const reviews = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    rating: decimal("rating").notNull(),
+    rating: doublePrecision("rating").notNull(),
     comment: text("comment"),
     createdAt: date("created_at").defaultNow(),
   },

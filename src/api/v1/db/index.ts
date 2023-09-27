@@ -1,11 +1,11 @@
+import log from "@api/v1/utils/logger";
 import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import log from "@api/v1/utils/logger";
 
-import * as schema from "./schema";
 import { Logger } from "drizzle-orm";
 import { format } from "sql-formatter";
+import * as schema from "./schema";
 
 const dbUrl: string = process.env.DATABASE_URL!;
 
