@@ -1,7 +1,5 @@
 import { Request, Response, Router } from "express";
 
-import Controller from "@api/v1/utils/interfaces/controller.interface";
-import { ItemsService } from "./items.service";
 import {
   authorizeRoles,
   requireJwt,
@@ -9,6 +7,11 @@ import {
   uploadItemThumbnail,
   validateRequest,
 } from "@api/v1/middlewares";
+import Controller from "@api/v1/utils/interfaces/controller.interface";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
+import { omit } from "lodash";
+import { z } from "zod";
+import { ItemsService } from "./items.service";
 import {
   CreateItem,
   CreateItemReview,
@@ -19,8 +22,6 @@ import {
   UpdateItem,
   UpdateItemSchema,
 } from "./items.validation";
-import { z } from "zod";
-import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class ItemsController implements Controller {
   public path: string;
@@ -255,7 +256,16 @@ export class ItemsController implements Controller {
   };
 
   private getOne: RequestHandler<SelectItem> = async (req, res) => {
-    const item = await this.itemService.getOne(req.params.itemId);
+    const result = await this.itemService.getOne(req.params.itemId);
+    const isFavorite = result.favoritedUsers
+      .map(({ userId }) => userId)
+      .includes(req.user?.id!);
+
+    const item = {
+      ...omit(result, "favoritedUsers"),
+      isFavorite,
+    };
+
     return res.success({ data: item });
   };
 

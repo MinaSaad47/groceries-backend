@@ -34,6 +34,7 @@ export class ItemsService {
         category: true,
         images: { columns: { itemId: false } },
         reviews: { with: { user: true }, columns: { userId: false } },
+        favoritedUsers: { columns: { userId: true } },
       },
     });
 
