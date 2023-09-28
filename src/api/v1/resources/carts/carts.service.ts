@@ -5,14 +5,13 @@ import {
   items,
   orders,
   OrderStatus,
-  orderStatus,
   User,
 } from "@api/v1/db/schema";
-import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { and, eq, getTableColumns, or, sql, SQL } from "drizzle-orm";
 import { PaymentService } from "@api/v1/services/payment.service";
-import { ItemAvailabilityError } from "./carts.errors";
+import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
+import { and, eq, or, sql, SQL } from "drizzle-orm";
 import { AuthorizationError } from "../../utils/errors/auth.error";
+import { ItemAvailabilityError } from "./carts.errors";
 
 export class CartsService {
   private db: Database;
@@ -44,7 +43,7 @@ export class CartsService {
       await this.authorizeAndCheckIfExists(tx, user, cartId);
 
       return await tx.query.carts.findFirst({
-        where: eq(carts.id, cartId),
+        where: and(eq(carts.userId, user.id), eq(carts.id, cartId)),
         with: {
           order: {
             columns: { paymentIntentId: false, id: false, cartId: false },
