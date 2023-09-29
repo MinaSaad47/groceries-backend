@@ -99,7 +99,7 @@ export class ProfileController implements Controller {
     registry.registerPath({
       tags: ["profile"],
       path: "/profile/favorites/{itemId}",
-      method: "post",
+      method: "delete",
       security: [{ [bearerAuth.name]: [] }],
       summary: "delete favorated item",
       request: {
