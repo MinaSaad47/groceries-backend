@@ -17,6 +17,8 @@ import {
   CreateItemReview,
   CreateItemReviewSchema,
   CreateItemSchema,
+  QueryItems,
+  QueryItemsSchema,
   SelectItem,
   SelectItemSchema,
   UpdateItem,
@@ -41,6 +43,30 @@ export class ItemsController implements Controller {
       path: "/items",
       method: "get",
       summary: "get all items",
+      parameters: [
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "q",
+          description: "a search term",
+        },
+        {
+          in: "query",
+          schema: {
+            type: "integer",
+          },
+          name: "page",
+        },
+        {
+          in: "query",
+          schema: {
+            type: "integer",
+          },
+          name: "perPage",
+        },
+      ],
       responses: {
         200: {
           description: "array of items",
@@ -204,7 +230,7 @@ export class ItemsController implements Controller {
         ],
         this.createOne
       )
-      .get(this.getAll);
+      .get(validateRequest(z.object({ query: QueryItemsSchema })), this.getAll);
 
     this.router
       .route("/:itemId")
@@ -250,8 +276,8 @@ export class ItemsController implements Controller {
     return res.success({ code: 201, data: item, i18n: { key: "items" } });
   };
 
-  private getAll: RequestHandler = async (req, res) => {
-    const items = await this.itemService.getAll();
+  private getAll: RequestHandler<{}, {}, QueryItems> = async (req, res) => {
+    const items = await this.itemService.getAll(req.query);
     return res.success({ data: items });
   };
 

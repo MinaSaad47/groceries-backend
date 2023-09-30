@@ -29,8 +29,8 @@ declare global {
     details?: any;
   }
 
-  export type RequestHandler<Params = {}, ReqBody = {}, ResBody = {}> = (
-    req: Request<Params, {}, ReqBody>,
+  export type RequestHandler<Params = {}, ReqBody = {}, ReqQuery = {}> = (
+    req: Request<Params, {}, ReqBody, ReqQuery>,
     res: Response<Response>
   ) => void;
 

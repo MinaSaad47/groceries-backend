@@ -3,7 +3,12 @@ import { images, items, reviews } from "@api/v1/db/schema";
 import { ImageUploadService } from "@api/v1/services/image_upload.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
 import { eq } from "drizzle-orm";
-import { CreateItem, CreateItemReview, UpdateItem } from "./items.validation";
+import {
+  CreateItem,
+  CreateItemReview,
+  QueryItems,
+  UpdateItem,
+} from "./items.validation";
 
 export class ItemsService {
   private db: Database;
@@ -12,8 +17,8 @@ export class ItemsService {
     this.db = db;
   }
 
-  public async getAll() {
-    return await this.db.query.items.findMany();
+  public async getAll(query?: QueryItems) {
+    return await this.db.query.items.findMany(query);
   }
 
   public async createOne(body: CreateItem) {

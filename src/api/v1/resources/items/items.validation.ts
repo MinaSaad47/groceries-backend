@@ -1,5 +1,6 @@
 import { items, reviews } from "@api/v1/db/schema";
 import { faker } from "@faker-js/faker";
+import { ilike } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -29,6 +30,30 @@ export const SelectItemSchema = z
   })
   .openapi("SelectItemSchema");
 export type SelectItem = z.infer<typeof SelectItemSchema>;
+
+export const QueryItemsSchema = z
+  .object({
+    q: z.string().optional(),
+    page: z.undefined({
+      invalid_type_error: "both perPage & page must be defined",
+    }),
+    perPage: z.undefined({
+      invalid_type_error: "both perPage & page must be defined",
+    }),
+  })
+  .or(
+    z.object({
+      q: z.string().optional(),
+      page: z.number({ coerce: true }).int().positive(),
+      perPage: z.number({ coerce: true }).int().positive(),
+    })
+  )
+  .transform(({ q, page, perPage }) => ({
+    ...(page && perPage && { offset: (page - 1) * perPage, limit: perPage }),
+    ...(q && { where: ilike(items.name, `%${q}%`) }),
+  }));
+
+export type QueryItems = z.infer<typeof QueryItemsSchema>;
 
 export const CreateItemReviewSchema = createInsertSchema(reviews, {
   rating: (_) => z.number().min(1).max(5),
