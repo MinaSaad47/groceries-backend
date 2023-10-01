@@ -1,4 +1,4 @@
-import { InferSelectModel, relations } from "drizzle-orm";
+import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   date,
   doublePrecision,
@@ -6,6 +6,7 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  pgView,
   primaryKey,
   text,
   uuid,
@@ -32,18 +33,21 @@ export const usersRelations = relations(users, ({ many }) => ({
   reviews: many(reviews),
   carts: many(carts),
   favoritedItems: many(favorites),
+  orders: many(orders),
 }));
 export type User = InferSelectModel<typeof users>;
 
 // Define the "addresses" table
 export const addresses = pgTable("addresses", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
-  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   buildingNumber: varchar("building_number", { length: 255 }),
   apartmentNumber: varchar("appartment_number", { length: 255 }),
   floorNumber: varchar("floor_number", { length: 255 }),
-  lat: doublePrecision("lat"),
-  long: doublePrecision("lng"),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
 });
 export const addressesRelations = relations(addresses, ({ one }) => ({
   user: one(users, { fields: [addresses.userId], references: [users.id] }),
@@ -71,15 +75,19 @@ export const brandsRelations = relations(brands, ({ many }) => ({
 // Define the "items" table
 export const items = pgTable("items", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
-  categoryId: uuid("category_id").references(() => categories.id),
-  brandId: uuid("brand_id").references(() => brands.id),
+  categoryId: uuid("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
+  brandId: uuid("brand_id").references(() => brands.id, {
+    onDelete: "set null",
+  }),
   name: varchar("name", { length: 255 }).notNull(),
   thumbnail: varchar("thumbnail", { length: 255 }),
   description: text("description"),
   price: doublePrecision("price").notNull(),
   offerPrice: doublePrecision("offer_price"),
-  quantity: integer("quantity").notNull(),
-  quantityType: varchar("quantity_type", { length: 50 }).notNull(),
+  qty: integer("qty").notNull(),
+  qtyType: varchar("qty_type", { length: 50 }).notNull(),
 });
 export const itemsRelations = relations(items, ({ many, one }) => ({
   reviews: many(reviews),
@@ -91,6 +99,7 @@ export const itemsRelations = relations(items, ({ many, one }) => ({
   images: many(images),
   favoritedUsers: many(favorites),
   carts: many(cartsToItems),
+  orders: many(ordersToItems),
 }));
 
 // Define the "item_images" table
@@ -111,11 +120,14 @@ export const carts = pgTable("carts", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  orderId: uuid("order_id").references(() => orders.id, {
+    onDelete: "set null",
+  }),
 });
 export const cartsRelations = relations(carts, ({ one, many }) => ({
   user: one(users, { fields: [carts.userId], references: [users.id] }),
   items: many(cartsToItems),
-  order: one(orders, { fields: [carts.id], references: [orders.cartId] }),
+  order: one(orders, { fields: [carts.orderId], references: [orders.id] }),
 }));
 
 export const cartsToItems = pgTable(
@@ -127,7 +139,7 @@ export const cartsToItems = pgTable(
     itemId: uuid("item_id")
       .notNull()
       .references(() => items.id, { onDelete: "cascade" }),
-    quantity: numeric("quantity").notNull(),
+    qty: integer("qty").notNull(),
   },
   (t) => ({ pk: primaryKey(t.cartId, t.itemId) })
 );
@@ -142,6 +154,7 @@ export const orderStatus = pgEnum("order_status", [
   "paid",
   "shipped",
   "delivered",
+  "canceled",
 ]);
 export type OrderStatus = (typeof orderStatus.enumValues)[number];
 
@@ -150,15 +163,38 @@ export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   paymentIntentId: text("paymeny_indent_id").notNull(),
   orderDate: date("order_date").defaultNow(),
-  totalPrice: numeric("total_amount").notNull(),
+  totalPrice: numeric("total_price").notNull(),
   status: orderStatus("status").default("pending"),
-  cartId: uuid("cart_id")
-    .notNull()
-    .unique()
-    .references(() => carts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
 });
-export const ordersRelations = relations(orders, ({ one }) => ({
-  user: one(carts, { fields: [orders.cartId], references: [carts.id] }),
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, { fields: [orders.userId], references: [users.id] }),
+  items: many(ordersToItems),
+  cart: one(carts, { fields: [orders.id], references: [carts.orderId] }),
+}));
+
+export const ordersToItems = pgTable(
+  "orders_to_items",
+  {
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id),
+    qty: integer("qty").notNull(),
+  },
+  (t) => ({ pk: primaryKey(t.orderId, t.itemId) })
+);
+export const ordersToItemsRelations = relations(ordersToItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [ordersToItems.orderId],
+    references: [orders.id],
+  }),
+  item: one(items, {
+    fields: [ordersToItems.itemId],
+    references: [items.id],
+  }),
 }));
 
 // Define the "reviews" table
@@ -194,3 +230,27 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   user: one(users, { fields: [favorites.userId], references: [users.id] }),
   item: one(items, { fields: [favorites.itemId], references: [items.id] }),
 }));
+
+export const itemsView = pgView("items_view", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  categoryId: uuid("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
+  brandId: uuid("brand_id").references(() => brands.id, {
+    onDelete: "set null",
+  }),
+  name: varchar("name", { length: 255 }).notNull(),
+  thumbnail: varchar("thumbnail", { length: 255 }),
+  description: text("description"),
+  price: doublePrecision("price").notNull(),
+  offerPrice: doublePrecision("offer_price"),
+  qty: integer("qty").notNull(),
+  qtyType: varchar("qty_type", { length: 50 }).notNull(),
+  orderCount: integer("order_count").default(0),
+}).as(sql`
+SELECT items.*, count(orders_to_items) as order_count, avg(${reviews.rating}) as total_rating
+FROM ${items}
+LEFT JOIN ${reviews} ON ${items.id} = ${reviews.itemId}
+LEFT JOIN ${ordersToItems} ON ${items.id} = ${ordersToItems.itemId}
+GROUP BY ${items.id}
+`);

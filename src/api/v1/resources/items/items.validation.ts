@@ -14,8 +14,8 @@ export const CreateItemSchema = createInsertSchema(items)
       name: faker.commerce.product(),
       price: parseFloat(faker.commerce.price()),
       description: faker.commerce.productDescription(),
-      quantity: 30,
-      quantityType: "KG",
+      qty: 30,
+      qtyType: "1KG",
     },
   });
 export type CreateItem = z.infer<typeof CreateItemSchema>;
@@ -34,6 +34,12 @@ export type SelectItem = z.infer<typeof SelectItemSchema>;
 export const QueryItemsSchema = z
   .object({
     q: z.string().optional(),
+    orderBy: z
+      .preprocess(
+        (val) => String(val).split(","),
+        z.array(z.enum(["price", "qty", "rating", "orderCount"]))
+      )
+      .optional(),
     page: z.undefined({
       invalid_type_error: "both perPage & page must be defined",
     }),
@@ -44,13 +50,20 @@ export const QueryItemsSchema = z
   .or(
     z.object({
       q: z.string().optional(),
+      orderBy: z
+        .preprocess(
+          (val) => String(val).split(","),
+          z.array(z.enum(["price", "qty", "rating", "orderCount"]))
+        )
+        .optional(),
       page: z.number({ coerce: true }).int().positive(),
       perPage: z.number({ coerce: true }).int().positive(),
     })
   )
-  .transform(({ q, page, perPage }) => ({
+  .transform(({ q, page, perPage, orderBy }) => ({
     ...(page && perPage && { offset: (page - 1) * perPage, limit: perPage }),
     ...(q && { where: ilike(items.name, `%${q}%`) }),
+    orderBy,
   }));
 
 export type QueryItems = z.infer<typeof QueryItemsSchema>;

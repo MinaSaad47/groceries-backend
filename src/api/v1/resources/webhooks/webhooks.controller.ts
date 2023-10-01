@@ -1,16 +1,15 @@
 import Controller from "@api/v1/utils/interfaces/controller.interface";
-import log from "@api/v1/utils/logger";
 import { Request, Response, Router } from "express";
-import { CartsService } from "../carts/carts.service";
+import { ProfileService } from "../profile/profile.service";
 
 export class WebhooksControoler implements Controller {
   public path: string;
   public router: Router;
-  public cartsService: CartsService;
+  public profileService: ProfileService;
 
-  constructor(path: string, cartsSerivce: CartsService) {
+  constructor(path: string, profileService: ProfileService) {
     this.path = path;
-    this.cartsService = cartsSerivce;
+    this.profileService = profileService;
     this.router = Router();
 
     this.initializeRoutes();
@@ -25,7 +24,10 @@ export class WebhooksControoler implements Controller {
 
     if (event.type === "payment_intent.succeeded") {
       const paymentIntentId = event.data.object.id;
-      await this.cartsService.updateOrder("admin", paymentIntentId, "paid");
+      await this.profileService.updateOrderStatus(
+        { user: "admin", paymentIntentId: paymentIntentId },
+        "paid"
+      );
     }
 
     return res.json({ received: true });

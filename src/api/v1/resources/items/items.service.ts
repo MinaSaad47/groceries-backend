@@ -1,8 +1,10 @@
 import { Database } from "@api/v1/db";
-import { images, items, reviews } from "@api/v1/db/schema";
+import { images, items, ordersToItems, reviews } from "@api/v1/db/schema";
 import { ImageUploadService } from "@api/v1/services/image_upload.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { eq } from "drizzle-orm";
+import { SQL, desc, eq, getTableColumns, sql } from "drizzle-orm";
+import { PgColumn } from "drizzle-orm/pg-core";
+import { ceil } from "lodash";
 import {
   CreateItem,
   CreateItemReview,
@@ -18,7 +20,85 @@ export class ItemsService {
   }
 
   public async getAll(query?: QueryItems) {
-    return await this.db.query.items.findMany(query);
+    const orderCountSQ = this.db.$with("order_count_sq").as(
+      this.db
+        .select({
+          itemId: ordersToItems.itemId,
+          orderCount: sql<number>`count(${ordersToItems.orderId})`.as(
+            "order_count"
+          ),
+        })
+        .from(ordersToItems)
+        .groupBy(ordersToItems.itemId)
+    );
+
+    const ratingSQ = this.db.$with("rating_sq").as(
+      this.db
+        .select({
+          itemId: reviews.itemId,
+          rating: sql<number>`avg(${reviews.rating})`.as("rating"),
+        })
+        .from(reviews)
+        .groupBy(reviews.itemId)
+    );
+
+    let statement = this.db
+      .with(orderCountSQ, ratingSQ)
+      .select({
+        ...getTableColumns(items),
+        rating: sql`coalesce(${ratingSQ.rating}, 0)::float`.as('rating'),
+        orderCount: sql`coalesce(${orderCountSQ.orderCount}, 0)::int`.as('order_count'),
+      })
+      .from(items)
+      .leftJoin(orderCountSQ, eq(items.id, orderCountSQ.itemId))
+      .leftJoin(ratingSQ, eq(items.id, ratingSQ.itemId));
+
+    if (query?.where) {
+      statement = statement.where(query.where);
+    }
+
+    if (query?.orderBy) {
+      let orderBy: any = [];
+
+      query.orderBy.forEach((ob) => {
+        switch (ob) {
+          case "orderCount":
+            orderBy.push(desc(orderCountSQ.orderCount));
+            break;
+          case "price":
+            orderBy.push(desc(items.price));
+            break;
+          case "qty":
+            orderBy.push(desc(items.qty));
+            break;
+          case "rating":
+            orderBy.push(desc(ratingSQ.rating));
+            break;
+
+          default:
+            break;
+        }
+      });
+
+      statement = statement.orderBy(...orderBy);
+    }
+
+    if (Number(query?.limit) > 0 && Number(query?.offset) >= 0) {
+      statement = statement.limit(query?.limit!).offset(query?.offset!);
+
+      const [{ count }] = await this.db
+        .select({ count: sql<number>`count(${items.id})::int` })
+        .from(items);
+
+      const pagination = {
+        perPage: query?.limit!,
+        page: ceil((query?.offset! + 1) / query?.limit!),
+        totalPages: ceil(count / query?.limit!),
+      };
+      return { items: await statement, ...pagination };
+    }
+
+    return await statement;
   }
 
   public async createOne(body: CreateItem) {
@@ -46,6 +126,7 @@ export class ItemsService {
     if (!item) {
       throw new NotFoundError("items", itemId);
     }
+
     return item;
   }
 

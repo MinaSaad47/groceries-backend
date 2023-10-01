@@ -14,3 +14,9 @@ export class ItemAvailabilityError extends BaseError {
     Object.setPrototypeOf(this, ItemAvailabilityError.prototype);
   }
 }
+
+export class EmptyCartError extends BaseError {
+  constructor() {
+    super(422, `can't checkout empty cart`, { key: "carts.emty" });
+  }
+}

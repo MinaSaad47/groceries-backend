@@ -4,12 +4,10 @@ require("dotenv").config();
 
 // validation and openapi
 import {
-  OpenApiGeneratorV3,
   OpenApiGeneratorV31,
   extendZodWithOpenApi,
 } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import YAML from "yaml";
 
 extendZodWithOpenApi(z);
 
@@ -38,26 +36,26 @@ import "@api/v1/utils/extensions/pg.ext";
 // utilities
 import logger from "@api/v1/utils/logger";
 
-import { db, applyMigrations } from "@api/v1/db";
+import { applyMigrations, db } from "@api/v1/db";
 
 import { registry } from "@api/v1/utils/openapi/registery";
 
 import { UserController } from "@api/v1/resources/users/users.controller";
 import { UsersService } from "@api/v1/resources/users/users.service";
 
-import { ItemsService } from "@api/v1/resources/items/items.service";
+import { handleErrorMiddleware } from "@api/v1/middlewares/error.middleware";
 import { AuthController } from "@api/v1/resources/auth/auth.controller";
+import { BrandsController } from "@api/v1/resources/brands/brands.controller";
+import { BrandsService } from "@api/v1/resources/brands/brands.serivce";
+import { CartsController } from "@api/v1/resources/carts/carts.controller";
+import { CartsService } from "@api/v1/resources/carts/carts.service";
+import { CategoriesController } from "@api/v1/resources/categories/categories.controller";
+import { CategoriesService } from "@api/v1/resources/categories/categories.serivce";
+import { ItemsController } from "@api/v1/resources/items/items.controller";
+import { ItemsService } from "@api/v1/resources/items/items.service";
 import { ProfileController } from "@api/v1/resources/profile/profile.controller";
 import { ProfileService } from "@api/v1/resources/profile/profile.service";
-import { CartsService } from "@api/v1/resources/carts/carts.service";
-import { CartsController } from "@api/v1/resources/carts/carts.controller";
-import { handleErrorMiddleware } from "@api/v1/middlewares/error.middleware";
 import { WebhooksControoler } from "@api/v1/resources/webhooks/webhooks.controller";
-import { ItemsController } from "@api/v1/resources/items/items.controller";
-import { CategoriesService } from "@api/v1/resources/categories/categories.serivce";
-import { CategoriesController } from "@api/v1/resources/categories/categories.controller";
-import { BrandsService } from "@api/v1/resources/brands/brands.serivce";
-import { BrandsController } from "@api/v1/resources/brands/brands.controller";
 
 const isProduction = process.env.NODE_ENV === "production";
 const secretOrKey = isProduction
@@ -107,7 +105,7 @@ async function main() {
     new CartsController("/api/v1/profile/carts", cartsService),
     new CategoriesController("/api/v1/categories", categoriesService),
     new BrandsController("/api/v1/brands", brandsService),
-    new WebhooksControoler("/webhooks", cartsService),
+    new WebhooksControoler("/webhooks", profileService),
   ];
 
   app.post("/webhock", async (req, res) => {});

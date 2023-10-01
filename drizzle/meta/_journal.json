@@ -43,6 +43,55 @@
       "when": 1695853737844,
       "tag": "0005_lonely_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1696153736076,
+      "tag": "0006_bouncy_mister_fear",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1696163497795,
+      "tag": "0007_easy_stardust",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1696164567947,
+      "tag": "0008_cloudy_alex_wilder",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1696175688499,
+      "tag": "0009_gorgeous_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1696175781399,
+      "tag": "0010_flimsy_mephisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1696176950929,
+      "tag": "0011_material_cassandra_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1696182164120,
+      "tag": "0012_robust_vulcan",
+      "breakpoints": true
     }
   ]
 }

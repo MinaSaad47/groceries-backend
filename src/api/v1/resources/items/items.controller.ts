@@ -17,7 +17,6 @@ import {
   CreateItemReview,
   CreateItemReviewSchema,
   CreateItemSchema,
-  QueryItems,
   QueryItemsSchema,
   SelectItem,
   SelectItemSchema,
@@ -65,6 +64,14 @@ export class ItemsController implements Controller {
             type: "integer",
           },
           name: "perPage",
+        },
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "orderBy",
+          description: 'values from "price", "qty", "rating", "orderCount"',
         },
       ],
       responses: {
@@ -276,7 +283,7 @@ export class ItemsController implements Controller {
     return res.success({ code: 201, data: item, i18n: { key: "items" } });
   };
 
-  private getAll: RequestHandler<{}, {}, QueryItems> = async (req, res) => {
+  private getAll: RequestHandler<{}, {}, any> = async (req, res) => {
     const items = await this.itemService.getAll(req.query);
     return res.success({ data: items });
   };

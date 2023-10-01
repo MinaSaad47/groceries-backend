@@ -1,9 +1,9 @@
 import { requireJwt, validateRequest } from "@api/v1/middlewares";
 import Controller from "@api/v1/utils/interfaces/controller.interface";
+import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { Request, Response, Router } from "express";
+import { z } from "zod";
 import { CartsService } from "./carts.service";
-import { PaymentService } from "@api/v1/services/payment.service";
-import { omit } from "lodash";
 import {
   CreateCartToItem,
   CreateCartToItemSchema,
@@ -12,8 +12,6 @@ import {
   SelectCartToItem,
   SelectCartToItemSchema,
 } from "./carts.validation";
-import { z } from "zod";
-import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 
 export class CartsController implements Controller {
   public path: string;
@@ -127,21 +125,6 @@ export class CartsController implements Controller {
       },
     });
 
-    registry.registerPath({
-      tags: ["carts"],
-      path: "/profile/carts/{cartId}/order",
-      method: "delete",
-      security: [{ [bearerAuth.name]: [] }],
-      summary: "cancel the order of the cart",
-      request: {
-        params: SelectCartSchema,
-      },
-      responses: {
-        200: {
-          description: "canceled order",
-        },
-      },
-    });
 
     this.router.use(requireJwt);
     this.router.route("/").post(this.createOne).get(this.getAll);
@@ -169,10 +152,6 @@ export class CartsController implements Controller {
       .all(validateRequest(z.object({ params: SelectCartToItemSchema })))
       .delete(this.deleteItem);
 
-    this.router
-      .route("/:cartId/order")
-      .all(validateRequest(z.object({ params: SelectCartSchema })))
-      .delete(this.cancelOrder);
   }
 
   private createOne = async (req: Request, res: Response) => {
@@ -202,14 +181,14 @@ export class CartsController implements Controller {
       req.user!,
       req.params.cartId,
       req.body.itemId,
-      req.body.quantity
+      req.body.qty
     );
 
     res.success({ code: 201, data: item, i18n: { key: "cart.item" } });
   };
 
   private checkout: RequestHandler<SelectCart> = async (req, res) => {
-    const order = await this.cartsService.createOrder(
+    const order = await this.cartsService.checkout(
       req.user!,
       req.params.cartId
     );
@@ -217,15 +196,6 @@ export class CartsController implements Controller {
     res.success({
       data: order,
     });
-  };
-
-  private cancelOrder: RequestHandler<SelectCart> = async (req, res) => {
-    const order = await this.cartsService.deleteOrder(
-      req.user!,
-      req.params.cartId
-    );
-
-    res.success({ data: order, i18n: { key: "orders.cancel" } });
   };
 
   private deleteItem: RequestHandler<SelectCartToItem> = async (req, res) => {

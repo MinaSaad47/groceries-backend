@@ -1,4 +1,6 @@
+import { addresses } from "@api/v1/db/schema";
 import { faker } from "@faker-js/faker";
+import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const CreateProfileFavoriteSchema = z
@@ -14,3 +16,29 @@ export const SelectProfileFavoriteSchema = z
     default: { itemId: faker.string.uuid() },
   });
 export type SelectProfileFavorite = z.infer<typeof SelectProfileFavoriteSchema>;
+
+export const CreateAddressSchema = createSelectSchema(addresses, {
+  lat: ({ lat }) => lat.min(-85).max(+85),
+  lng: ({ lng }) => lng.min(-180).max(+180),
+})
+  .omit({ id: true, userId: true })
+  .openapi("CreateAddress", {
+    default: {
+      lat: 32,
+      lng: 32,
+      apartmentNumber: "4a",
+      floorNumber: "1b",
+      buildingNumber: "c4",
+    },
+  });
+
+export type CreateAddress = z.infer<typeof CreateAddressSchema>;
+
+export const SelectAddressSchema = z
+  .object({ addressId: z.string().uuid() })
+  .openapi("SelectAddress");
+export type SelectAddress = z.infer<typeof SelectAddressSchema>;
+
+
+export const SelectOrderSchema = z.object({ orderId: z.string().uuid() });
+export type SelectOrder = z.infer<typeof SelectOrderSchema>;

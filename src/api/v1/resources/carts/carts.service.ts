@@ -5,13 +5,15 @@ import {
   items,
   orders,
   OrderStatus,
+  ordersToItems,
   User,
 } from "@api/v1/db/schema";
 import { PaymentService } from "@api/v1/services/payment.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { and, eq, or, sql, SQL } from "drizzle-orm";
+import { and, eq, sql, SQL } from "drizzle-orm";
 import { AuthorizationError } from "../../utils/errors/auth.error";
-import { ItemAvailabilityError } from "./carts.errors";
+import { EmptyCartError, ItemAvailabilityError } from "./carts.errors";
+import { omit } from "lodash";
 
 export class CartsService {
   private db: Database;
@@ -25,7 +27,6 @@ export class CartsService {
       const [cart] = await tx.insert(carts).values({ userId }).returning();
       return tx.query.carts.findFirst({
         where: eq(carts.id, cart.id),
-        with: { items: true },
       });
     });
   }
@@ -33,7 +34,7 @@ export class CartsService {
   public async getAll(userId: string) {
     return await this.db.query.carts.findMany({
       where: eq(carts.userId, userId),
-      with: { items: { columns: { itemId: true, quantity: true } } },
+      with: { items: { columns: { itemId: true, qty: true } } },
       columns: { userId: false },
     });
   }
@@ -45,11 +46,8 @@ export class CartsService {
       return await tx.query.carts.findFirst({
         where: and(eq(carts.userId, user.id), eq(carts.id, cartId)),
         with: {
-          order: {
-            columns: { paymentIntentId: false, id: false, cartId: false },
-          },
           items: {
-            with: { item: true },
+            with: { item: {columns: { qty: false }} },
             columns: { cartId: false, itemId: false },
           },
         },
@@ -61,7 +59,7 @@ export class CartsService {
     user: User,
     cartId: string,
     itemId: string,
-    quantity: number
+    qty: number
   ) {
     return await this.db.transaction(async (tx) => {
       await this.authorizeAndCheckIfExists(tx, user, cartId);
@@ -73,24 +71,24 @@ export class CartsService {
         throw new NotFoundError("items", itemId);
       }
 
-      if (item.quantity < quantity) {
-        throw new ItemAvailabilityError(quantity, item.quantity);
+      if (item.qty < qty) {
+        throw new ItemAvailabilityError(qty, item.qty);
       }
 
       [item] = await tx
         .update(items)
-        .set({ quantity: item.quantity - quantity })
+        .set({ qty: sql`qty - ${qty}` })
         .where(eq(items.id, itemId))
         .returning();
 
       const [cartItem] = await tx
         .insert(cartsToItems)
-        .values({ cartId, itemId, quantity: quantity.toString() })
+        .values({ cartId, itemId, qty })
         .returning();
 
       return tx.query.cartsToItems.findFirst({
         where: eq(cartsToItems.cartId, cartItem.cartId),
-        with: { item: { columns: { quantity: false } } },
+        with: { item: { columns: { qty: false } } },
         columns: { itemId: false },
       });
     });
@@ -116,40 +114,29 @@ export class CartsService {
 
       await tx
         .update(items)
-        .set({ quantity: sql`quantity + ${cartToItem.quantity}` })
+        .set({ qty: sql`qty + ${cartToItem.qty}` })
         .where(eq(items.id, itemId));
     });
   }
 
-  public async createOrder(user: User, cartId: string) {
+  public async checkout(user: User, cartId: string) {
     return await this.db.transaction(async (tx) => {
       await this.authorizeAndCheckIfExists(tx, user, cartId);
 
+      // 1. check if the order already exsits
       const cart = await tx.query.carts.findFirst({
         where: eq(carts.id, cartId),
         with: {
-          items: {
-            with: { item: true },
-            columns: { cartId: false, itemId: false },
-          },
+          order: true,
+          items: { with: { item: true }, columns: { cartId: false } },
         },
       });
 
-      let totalPrice = 0;
-
-      cart?.items.forEach(({ quantity, item }) => {
-        const itemPrice = Number(quantity) * Number(item.price);
-        totalPrice += itemPrice;
-      });
-
-      const prevOrder = await tx.query.orders.findFirst({
-        where: or(eq(orders.cartId, cartId), eq(orders.status, "pending")),
-      });
-
-      if (prevOrder) {
+      if (cart?.order) {
+        // 2. if yes, get payment data and return it attached to the order
         const { clientSecret, publishableKey } =
-          await PaymentService.findPayment(prevOrder.paymentIntentId);
-        const { id, orderDate, status } = prevOrder;
+          await PaymentService.findPayment(cart.order.paymentIntentId);
+        const { id, orderDate, status, totalPrice } = cart.order;
         return {
           order: { id, orderDate, status, cartId, totalPrice },
           clientSecret,
@@ -157,73 +144,54 @@ export class CartsService {
         };
       }
 
+      // 2. if no, calculate the total price
+      const totalPrice =
+        cart?.items
+          .map(({ qty, item: { price } }) => qty * price)
+          .reduce((a, b) => a + b) ?? 0;
+      if (totalPrice == 0) {
+        throw new EmptyCartError();
+      }
+
+      // 3. generate new payment data
       const { clientSecret, paymentIntentId, publishableKey } =
         await PaymentService.createPayment(totalPrice, user.email);
 
-      const [{ id, orderDate, status }] = await this.db
+      // 4. create new order
+      const [{ id: orderId, orderDate, status }] = await this.db
         .insert(orders)
-        .values({ cartId, totalPrice: totalPrice.toString(), paymentIntentId })
+        .values({
+          userId: user.id,
+          totalPrice: totalPrice.toString(),
+          paymentIntentId,
+        })
         .returning();
 
-      const order = { cartId, id, orderDate, status, totalPrice };
+      // 5. add the items to the order
+      const orderItems = cart?.items.map(({ qty, item: { id: itemId } }) => ({
+        itemId,
+        qty,
+        orderId,
+      }))!;
+      const items = await this.db
+        .insert(ordersToItems)
+        .values(orderItems)
+        .returning();
+
+      // 6. return payment data attached to new the order
+      const order = {
+        userId: user.id,
+        id: orderId,
+        orderDate,
+        status,
+        totalPrice,
+        items: items.map((item) => omit(item, "itemId")),
+      };
 
       return { order, clientSecret, publishableKey };
     });
   }
 
-  public async deleteOrder(user: User, cartId: string) {
-    await this.authorizeAndCheckIfExists(this.db, user, cartId);
-
-    const [order] = await this.db
-      .delete(orders)
-      .where(eq(orders.cartId, cartId))
-      .returning();
-
-    if (!order) {
-      throw new NotFoundError("orders", cartId);
-    }
-
-    const { orderDate, totalPrice } = order;
-
-    return { orderDate, totalPrice, status: "canceled" };
-  }
-
-  public async updateOrder(
-    user: User | "admin",
-    update: { paymentIntentId?: string; cartId?: string },
-    status: OrderStatus
-  ) {
-    let where: SQL[] = [];
-
-    update.cartId && where.push(eq(carts.id, update.cartId));
-
-    const cart = await this.db.query.carts.findFirst({
-      where: and(...where),
-    });
-
-    if (!cart) {
-      throw new NotFoundError("carts");
-    }
-
-    await this.authorizeAndCheckIfExists(this.db, user, cart.id);
-
-    where = [];
-
-    update.paymentIntentId &&
-      where.push(eq(orders.paymentIntentId, update.paymentIntentId));
-    update.cartId && where.push(eq(orders.cartId, update.cartId));
-
-    const [order] = await this.db
-      .update(orders)
-      .set({ status })
-      .where(and(...where))
-      .returning();
-    if (!order) {
-      throw new NotFoundError("orders");
-    }
-
-    return order;
-  }
 
   private async authorizeAndCheckIfExists(
     ctx: Database,
@@ -236,6 +204,7 @@ export class CartsService {
 
     const cart = await ctx.query.carts.findFirst({
       where: eq(carts.id, cartId),
+      columns: { userId: true },
     });
     if (!cart) {
       throw new NotFoundError("carts", cartId);
