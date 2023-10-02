@@ -18,6 +18,7 @@ import {
   CreateItemReviewSchema,
   CreateItemSchema,
   QueryItemsSchema,
+  QueryLangSchema,
   SelectItem,
   SelectItemSchema,
   UpdateItem,
@@ -73,6 +74,14 @@ export class ItemsController implements Controller {
           name: "orderBy",
           description: 'values from "price", "qty", "rating", "orderCount"',
         },
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "lang",
+          description: 'values from "ar", "en"',
+        },
       ],
       responses: {
         200: {
@@ -107,6 +116,16 @@ export class ItemsController implements Controller {
       request: {
         params: SelectItemSchema,
       },
+      parameters: [
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "lang",
+          description: "value from 'ar', 'en'",
+        },
+      ],
       responses: {
         200: {
           description: "item details",
@@ -241,7 +260,11 @@ export class ItemsController implements Controller {
 
     this.router
       .route("/:itemId")
-      .all(validateRequest(z.object({ params: SelectItemSchema })))
+      .all(
+        validateRequest(
+          z.object({ params: SelectItemSchema, query: QueryLangSchema })
+        )
+      )
       .get(this.getOne)
       .patch(
         [
@@ -288,8 +311,8 @@ export class ItemsController implements Controller {
     return res.success({ data: items });
   };
 
-  private getOne: RequestHandler<SelectItem> = async (req, res) => {
-    const result = await this.itemService.getOne(req.params.itemId);
+  private getOne: RequestHandler<SelectItem, {}, any> = async (req, res) => {
+    const result = await this.itemService.getOne(req.params.itemId, req.query);
     const isFavorite = result.favoritedUsers
       .map(({ userId }) => userId)
       .includes(req.user?.id!);

@@ -1,14 +1,20 @@
 import { Database } from "@api/v1/db";
-import { images, items, ordersToItems, reviews } from "@api/v1/db/schema";
+import {
+  images,
+  items,
+  itemsTrans,
+  ordersToItems,
+  reviews,
+} from "@api/v1/db/schema";
 import { ImageUploadService } from "@api/v1/services/image_upload.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { SQL, desc, eq, getTableColumns, sql } from "drizzle-orm";
-import { PgColumn } from "drizzle-orm/pg-core";
+import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import { ceil } from "lodash";
 import {
   CreateItem,
   CreateItemReview,
   QueryItems,
+  QueryLang,
   UpdateItem,
 } from "./items.validation";
 
@@ -32,6 +38,15 @@ export class ItemsService {
         .groupBy(ordersToItems.itemId)
     );
 
+    const transColumns = Object.values(getTableColumns(itemsTrans));
+    const transSQ = this.db.$with("trans_sq").as(
+      this.db
+        .select()
+        .from(itemsTrans)
+        .groupBy(...transColumns)
+        .where(eq(itemsTrans.lang, query?.lang as string))
+    );
+
     const ratingSQ = this.db.$with("rating_sq").as(
       this.db
         .select({
@@ -43,13 +58,18 @@ export class ItemsService {
     );
 
     let statement = this.db
-      .with(orderCountSQ, ratingSQ)
+      .with(transSQ, orderCountSQ, ratingSQ)
       .select({
         ...getTableColumns(items),
-        rating: sql`coalesce(${ratingSQ.rating}, 0)::float`.as('rating'),
-        orderCount: sql`coalesce(${orderCountSQ.orderCount}, 0)::int`.as('order_count'),
+        rating: sql`coalesce(${ratingSQ.rating}, 0)::float`.as("rating"),
+        orderCount: sql`coalesce(${orderCountSQ.orderCount}, 0)::int`.as(
+          "order_count"
+        ),
+        name: transSQ.name,
+        description: transSQ.description,
       })
       .from(items)
+      .leftJoin(transSQ, eq(items.id, transSQ.itemId))
       .leftJoin(orderCountSQ, eq(items.id, orderCountSQ.itemId))
       .leftJoin(ratingSQ, eq(items.id, ratingSQ.itemId));
 
@@ -103,15 +123,26 @@ export class ItemsService {
 
   public async createOne(body: CreateItem) {
     return await this.db.transaction(async (tx) => {
-      const [item] = await tx.insert(items).values(body).returning();
+      const { name, description, ...insertItem } = body;
+      const [item] = await tx.insert(items).values(insertItem).returning();
+      const [trans] = await tx
+        .insert(itemsTrans)
+        .values({ name, description, lang: "en", itemId: item.id })
+        .returning();
       return await tx.query.items.findFirst({
         where: eq(items.id, item.id),
-        with: { brand: true, category: true, images: true, reviews: true },
+        with: {
+          brand: true,
+          category: true,
+          images: true,
+          reviews: true,
+          details: { columns: { itemId: false }, limit: 1 },
+        },
       });
     });
   }
 
-  public async getOne(itemId: string) {
+  public async getOne(itemId: string, query: QueryLang) {
     const item = await this.db.query.items.findFirst({
       where: eq(items.id, itemId),
       with: {
@@ -120,6 +151,7 @@ export class ItemsService {
         images: { columns: { itemId: false } },
         reviews: { with: { user: true }, columns: { userId: false } },
         favoritedUsers: { columns: { userId: true } },
+        details: { where: eq(itemsTrans.lang, query.lang) },
       },
     });
 
@@ -127,7 +159,13 @@ export class ItemsService {
       throw new NotFoundError("items", itemId);
     }
 
-    return item;
+    const { details, ...rest } = item;
+    console.log(details);
+    return {
+      ...rest,
+      name: details[0]?.name,
+      description: details[0]?.description,
+    };
   }
 
   public async deleteOne(itemId: string) {
@@ -143,15 +181,44 @@ export class ItemsService {
 
   public async updateOne(itemId: string, body: UpdateItem) {
     return await this.db.transaction(async (tx) => {
-      const [item] = await tx
-        .update(items)
-        .set(body)
-        .where(eq(items.id, itemId))
-        .returning();
+      const { details, ...updateItem } = body;
+
+      const [item] =
+        Object.keys(updateItem).length > 0
+          ? await tx
+              .update(items)
+              .set(updateItem)
+              .where(eq(items.id, itemId))
+              .returning()
+          : await this.db.query.items.findMany({ where: eq(items.id, itemId) });
 
       if (!item) {
         throw new NotFoundError("items", itemId);
       }
+      console.log(details);
+
+      details?.forEach(async ({ lang, description, name }) => {
+        if (description && name) {
+          await tx
+            .insert(itemsTrans)
+            .values({ lang, description, name, itemId: item.id })
+            .onConflictDoUpdate({
+              target: [itemsTrans.lang, itemsTrans.itemId],
+              set: { description, name },
+              where: and(
+                eq(itemsTrans.itemId, item.id),
+                eq(itemsTrans.lang, lang)
+              ),
+            });
+        } else {
+          await tx
+            .update(itemsTrans)
+            .set({ lang, description, name, itemId: item.id })
+            .where(
+              and(eq(itemsTrans.itemId, item.id), eq(itemsTrans.lang, lang))
+            );
+        }
+      });
 
       return await tx.query.items.findFirst({
         where: eq(items.id, item.id),
@@ -160,6 +227,7 @@ export class ItemsService {
           category: true,
           images: { columns: { itemId: false } },
           reviews: { with: { user: true }, columns: { userId: false } },
+          details: true,
         },
       });
     });

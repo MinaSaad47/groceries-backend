@@ -1,4 +1,4 @@
-import { InferSelectModel, relations, sql } from "drizzle-orm";
+import { InferSelectModel, relations } from "drizzle-orm";
 import {
   date,
   doublePrecision,
@@ -6,7 +6,6 @@ import {
   numeric,
   pgEnum,
   pgTable,
-  pgView,
   primaryKey,
   text,
   uuid,
@@ -81,9 +80,7 @@ export const items = pgTable("items", {
   brandId: uuid("brand_id").references(() => brands.id, {
     onDelete: "set null",
   }),
-  name: varchar("name", { length: 255 }).notNull(),
   thumbnail: varchar("thumbnail", { length: 255 }),
-  description: text("description"),
   price: doublePrecision("price").notNull(),
   offerPrice: doublePrecision("offer_price"),
   qty: integer("qty").notNull(),
@@ -100,6 +97,7 @@ export const itemsRelations = relations(items, ({ many, one }) => ({
   favoritedUsers: many(favorites),
   carts: many(cartsToItems),
   orders: many(ordersToItems),
+  details: many(itemsTrans),
 }));
 
 // Define the "item_images" table
@@ -230,27 +228,17 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   user: one(users, { fields: [favorites.userId], references: [users.id] }),
   item: one(items, { fields: [favorites.itemId], references: [items.id] }),
 }));
+export const itemsTrans = pgTable(
+  "items_trans",
+  {
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    lang: varchar("lang", { length: 5 }).notNull(),
+    itemId: uuid("itemId").references(() => items.id),
+  },
+  (t) => ({ pk: primaryKey(t.itemId, t.lang) })
+);
 
-export const itemsView = pgView("items_view", {
-  id: uuid("id").primaryKey().notNull().defaultRandom(),
-  categoryId: uuid("category_id").references(() => categories.id, {
-    onDelete: "set null",
-  }),
-  brandId: uuid("brand_id").references(() => brands.id, {
-    onDelete: "set null",
-  }),
-  name: varchar("name", { length: 255 }).notNull(),
-  thumbnail: varchar("thumbnail", { length: 255 }),
-  description: text("description"),
-  price: doublePrecision("price").notNull(),
-  offerPrice: doublePrecision("offer_price"),
-  qty: integer("qty").notNull(),
-  qtyType: varchar("qty_type", { length: 50 }).notNull(),
-  orderCount: integer("order_count").default(0),
-}).as(sql`
-SELECT items.*, count(orders_to_items) as order_count, avg(${reviews.rating}) as total_rating
-FROM ${items}
-LEFT JOIN ${reviews} ON ${items.id} = ${reviews.itemId}
-LEFT JOIN ${ordersToItems} ON ${items.id} = ${ordersToItems.itemId}
-GROUP BY ${items.id}
-`);
+export const itemsTransRelations = relations(itemsTrans, ({ one }) => ({
+  item: one(items, { fields: [itemsTrans.itemId], references: [items.id] }),
+}));

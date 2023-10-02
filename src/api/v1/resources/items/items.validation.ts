@@ -1,4 +1,4 @@
-import { items, reviews } from "@api/v1/db/schema";
+import { items, itemsTrans, reviews } from "@api/v1/db/schema";
 import { faker } from "@faker-js/faker";
 import { ilike } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -9,6 +9,7 @@ export const CreateItemSchema = createInsertSchema(items)
     id: true,
     thumbnail: true,
   })
+  .extend({ name: z.string(), description: z.string() })
   .openapi("CreateItemSchema", {
     default: {
       name: faker.commerce.product(),
@@ -20,8 +21,37 @@ export const CreateItemSchema = createInsertSchema(items)
   });
 export type CreateItem = z.infer<typeof CreateItemSchema>;
 
-export const UpdateItemSchema =
-  CreateItemSchema.partial().openapi("UpdateItemSchema");
+const DetailsSchema = z.object({
+  lang: z.enum(["en", "ar"]),
+  name: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export const UpdateItemSchema = createInsertSchema(items)
+  .extend({
+    details: z.array(
+      z.object({
+        lang: z.enum(["en", "ar"]),
+        name: z.string().optional(),
+        description: z.string().optional(),
+      })
+    ),
+  })
+  .partial()
+  .openapi("UpdateItemSchema", {
+    default: {
+      details: [
+        {
+          lang: "ar",
+          description: "وصف",
+          name: "اسم",
+        },
+      ],
+      price: parseFloat(faker.commerce.price()),
+      qty: 30,
+      qtyType: "1KG",
+    },
+  });
 export type UpdateItem = z.infer<typeof UpdateItemSchema>;
 
 export const SelectItemSchema = z
@@ -31,8 +61,14 @@ export const SelectItemSchema = z
   .openapi("SelectItemSchema");
 export type SelectItem = z.infer<typeof SelectItemSchema>;
 
+export const QueryLangSchema = z.object({
+  lang: z.enum(["en", "ar"]).default("en"),
+});
+export type QueryLang = z.infer<typeof QueryLangSchema>;
+
 export const QueryItemsSchema = z
   .object({
+    lang: z.enum(["en", "ar"]).default("en"),
     q: z.string().optional(),
     orderBy: z
       .preprocess(
@@ -49,6 +85,7 @@ export const QueryItemsSchema = z
   })
   .or(
     z.object({
+      lang: z.enum(["en", "ar"]).default("en"),
       q: z.string().optional(),
       orderBy: z
         .preprocess(
@@ -60,10 +97,11 @@ export const QueryItemsSchema = z
       perPage: z.number({ coerce: true }).int().positive(),
     })
   )
-  .transform(({ q, page, perPage, orderBy }) => ({
+  .transform(({ lang, q, page, perPage, orderBy }) => ({
     ...(page && perPage && { offset: (page - 1) * perPage, limit: perPage }),
-    ...(q && { where: ilike(items.name, `%${q}%`) }),
+    ...(q && { where: ilike(itemsTrans.name, `%${q}%`) }),
     orderBy,
+    lang,
   }));
 
 export type QueryItems = z.infer<typeof QueryItemsSchema>;
