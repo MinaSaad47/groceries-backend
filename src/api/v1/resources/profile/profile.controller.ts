@@ -8,6 +8,7 @@ import Controller from "@api/v1/utils/interfaces/controller.interface";
 import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { Router } from "express";
 import { z } from "zod";
+import { QueryItemsSchema } from "../items/items.validation";
 import { UpdateUser, UpdateUserSchema } from "../users/users.validation";
 import { ProfileService } from "./profile.service";
 import {
@@ -78,6 +79,16 @@ export class ProfileController implements Controller {
       method: "get",
       security: [{ [bearerAuth.name]: [] }],
       summary: "get all favorated items",
+      parameters: [
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "lang",
+          description: "value from 'ar', 'en'",
+        },
+      ],
       responses: {
         200: {
           description: "array of items",
@@ -243,7 +254,10 @@ export class ProfileController implements Controller {
     this.router
       .route("/favorites")
       .post(this.addFavorite)
-      .get(this.getAllFavorites);
+      .get(
+        validateRequest(z.object({ query: QueryItemsSchema })),
+        this.getAllFavorites
+      );
 
     this.router.route("/favorites/:itemId").delete(this.deleteFavorite);
 
@@ -311,8 +325,11 @@ export class ProfileController implements Controller {
     });
   };
 
-  private getAllFavorites: RequestHandler = async (req, res) => {
-    const favorites = await this.profileSerivce.getAllFavorites(req.user!.id);
+  private getAllFavorites: RequestHandler<{}, {}, any> = async (req, res) => {
+    const favorites = await this.profileSerivce.getAllFavorites(
+      req.user!.id,
+      req.query
+    );
     res.success({
       data: favorites,
     });
