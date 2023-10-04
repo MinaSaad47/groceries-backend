@@ -82,7 +82,7 @@ export const items = pgTable("items", {
   }),
   thumbnail: varchar("thumbnail", { length: 255 }),
   price: doublePrecision("price").notNull(),
-  offerPrice: doublePrecision("offer_price"),
+  offerPrice: doublePrecision("offer_price").default(0),
   qty: integer("qty").notNull(),
   qtyType: varchar("qty_type", { length: 50 }).notNull(),
 });
@@ -234,7 +234,7 @@ export const itemsTrans = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull(),
     lang: varchar("lang", { length: 5 }).notNull(),
-    itemId: uuid("itemId").references(() => items.id),
+    itemId: uuid("itemId").references(() => items.id, { onDelete: "cascade" }),
   },
   (t) => ({ pk: primaryKey(t.itemId, t.lang) })
 );

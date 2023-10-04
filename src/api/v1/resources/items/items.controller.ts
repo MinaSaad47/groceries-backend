@@ -72,7 +72,7 @@ export class ItemsController implements Controller {
             type: "string",
           },
           name: "orderBy",
-          description: 'values from "price", "qty", "rating", "orderCount"',
+          description: 'values from "price", "qty", "rating", "orderCount", "offerPrice"',
         },
         {
           in: "query",

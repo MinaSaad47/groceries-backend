@@ -73,7 +73,7 @@ export const QueryItemsSchema = z
     orderBy: z
       .preprocess(
         (val) => String(val).split(","),
-        z.array(z.enum(["price", "qty", "rating", "orderCount"]))
+        z.array(z.enum(["price", "qty", "rating", "orderCount", "offerPrice"]))
       )
       .optional(),
     page: z.undefined({
@@ -90,7 +90,9 @@ export const QueryItemsSchema = z
       orderBy: z
         .preprocess(
           (val) => String(val).split(","),
-          z.array(z.enum(["price", "qty", "rating", "orderCount"]))
+          z.array(
+            z.enum(["price", "qty", "rating", "orderCount", "offerPrice"])
+          )
         )
         .optional(),
       page: z.number({ coerce: true }).int().positive(),

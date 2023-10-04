@@ -93,6 +93,8 @@ export class ItemsService {
             break;
           case "rating":
             orderBy.push(desc(ratingSQ.rating));
+          case "offerPrice":
+            orderBy.push(desc(items.offerPrice));
             break;
 
           default:

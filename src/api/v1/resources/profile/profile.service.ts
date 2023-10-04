@@ -4,12 +4,15 @@ import {
   User,
   addresses,
   favorites,
+  items,
+  itemsTrans,
   orders,
   users,
 } from "@api/v1/db/schema";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { SQL, and, eq } from "drizzle-orm";
+import { SQL, and, eq, getTableColumns } from "drizzle-orm";
 import { omit } from "lodash";
+import { QueryItems } from "../items/items.validation";
 import { UpdateUser } from "../users/users.validation";
 import { CreateAddress } from "./profile.validation";
 
@@ -70,13 +73,23 @@ export class ProfileService {
     return favorite;
   }
 
-  public async getAllFavorites(userId: string) {
-    const allFavorites = await this.db.query.favorites.findMany({
-      where: eq(favorites.userId, userId),
-      with: { item: true },
-      columns: { userId: false, itemId: false },
-    });
-    return allFavorites.map((af) => af.item);
+  public async getAllFavorites(userId: string, query: QueryItems) {
+    const transColumns = Object.values(getTableColumns(itemsTrans));
+    const transSQ = this.db.$with("trans_sq").as(
+      this.db
+        .select()
+        .from(itemsTrans)
+        .groupBy(...transColumns)
+        .where(eq(itemsTrans.lang, query?.lang ?? ("en" as string)))
+    );
+
+    return await this.db
+      .with(transSQ)
+      .select({...getTableColumns(items), name: transSQ.name, description: transSQ.description})
+      .from(items)
+      .leftJoin(transSQ, eq(items.id, transSQ.itemId))
+      .leftJoin(favorites, eq(items.id, favorites.itemId))
+      .where(eq(favorites.userId, userId));
   }
 
   public async addAddress(userId: string, address: CreateAddress) {
