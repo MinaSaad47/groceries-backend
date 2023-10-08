@@ -9,6 +9,7 @@ import {
   validateRequest,
 } from "../../middlewares";
 import Controller from "../../utils/interfaces/controller.interface";
+import { QueryLang, QueryLangSchema } from "../items/items.validation";
 import { CategoriesService } from "./categories.serivce";
 import {
   CreateCategory,
@@ -53,6 +54,16 @@ export class CategoriesController implements Controller {
       method: "get",
       summary: "get all categories",
       path: "/categories",
+      parameters: [
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "lang",
+          description: "value from 'ar', 'en'",
+        },
+      ],
       responses: { 200: { description: "array of categories" } },
     });
 
@@ -124,7 +135,7 @@ export class CategoriesController implements Controller {
 
     this.router
       .route("/")
-      .get(this.getAll)
+      .get([validateRequest(z.object({ query: QueryLangSchema }))], this.getAll)
       .post(
         [
           authorizeRoles("admin"),
@@ -163,8 +174,8 @@ export class CategoriesController implements Controller {
     });
   };
 
-  private getAll: RequestHandler = async (req, res) => {
-    const categories = await this.categoriesService.getAll();
+  private getAll: RequestHandler<{}, {}, QueryLang> = async (req, res) => {
+    const categories = await this.categoriesService.getAll(req.query);
     return res.success({ data: categories });
   };
 
@@ -179,6 +190,7 @@ export class CategoriesController implements Controller {
     req,
     res
   ) => {
+    console.log(req.body);
     const category = await this.categoriesService.updateOne(
       req.params.categoryId,
       req.body

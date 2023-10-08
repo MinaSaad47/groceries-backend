@@ -57,11 +57,12 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
 // Define the "categories" table
 export const categories = pgTable("categories", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
-  name: varchar("name", { length: 255 }).notNull(),
+
   image: text("image"),
 });
 export const categoriesRelations = relations(categories, ({ many }) => ({
   items: many(items),
+  details: many(categoriesTrans),
 }));
 
 // Define the "brands" table
@@ -244,3 +245,24 @@ export const itemsTrans = pgTable(
 export const itemsTransRelations = relations(itemsTrans, ({ one }) => ({
   item: one(items, { fields: [itemsTrans.itemId], references: [items.id] }),
 }));
+
+export const categoriesTrans = pgTable(
+  "categories_trans",
+  {
+    name: text("name").notNull(),
+    lang: varchar("lang", { length: 5 }).notNull(),
+    categoryId: uuid("category_id").references(() => categories.id, {
+      onDelete: "cascade",
+    }),
+  },
+  (t) => ({ pk: primaryKey(t.categoryId, t.lang) })
+);
+export const categoriesTransRelations = relations(
+  categoriesTrans,
+  ({ one }) => ({
+    category: one(categories, {
+      fields: [categoriesTrans.categoryId],
+      references: [categories.id],
+    }),
+  })
+);

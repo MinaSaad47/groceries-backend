@@ -1,5 +1,6 @@
 import { Database } from "@api/v1/db";
 import {
+  categoriesTrans,
   images,
   items,
   itemsTrans,
@@ -153,7 +154,9 @@ export class ItemsService {
       where: eq(items.id, itemId),
       with: {
         brand: true,
-        category: true,
+        category: {
+          with: { details: { where: eq(categoriesTrans.lang, query.lang) } },
+        },
         images: { columns: { itemId: false } },
         reviews: { with: { user: true }, columns: { userId: false } },
         favoritedUsers: { columns: { userId: true } },

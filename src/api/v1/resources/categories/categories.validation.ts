@@ -8,15 +8,31 @@ export const CreateCategorySchema = createInsertSchema(categories)
     id: true,
     image: true,
   })
+  .extend({ name: z.string() })
   .openapi("CreateCategoryShema", {
     default: { name: faker.commerce.department() },
   });
 export type CreateCategory = z.infer<typeof CreateCategorySchema>;
 
-export const UpdateCategorySchema = CreateCategorySchema.partial().openapi(
-  "UpdateCategorySchema",
-  { default: { name: faker.commerce.department() } }
-);
+export const UpdateCategorySchema = z
+  .object({
+    details: z.array(
+      z.object({
+        lang: z.enum(["en", "ar"]),
+        name: z.string().optional(),
+      })
+    ).optional(),
+  })
+  .openapi("UpdateCategory", {
+    default: {
+      details: [
+        {
+          lang: "ar",
+          name: "اسم",
+        },
+      ],
+    },
+  });
 export type UpdateCategory = z.infer<typeof UpdateCategorySchema>;
 
 export const SelectCategorySchema = z
