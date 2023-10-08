@@ -22,7 +22,7 @@ export const applyMigrations = async () => {
 
 class CustomLogger implements Logger {
   logQuery(query: string, params: unknown[]): void {
-    if (log.level === "trace") {
+    if (log.level === "trace" && process.env.NODE_ENV === "development") {
       query = format(query, { language: "postgresql", keywordCase: "upper" });
     }
     log.trace(
