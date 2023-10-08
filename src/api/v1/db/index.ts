@@ -24,16 +24,16 @@ class CustomLogger implements Logger {
   logQuery(query: string, params: unknown[]): void {
     if (log.level === "trace" && process.env.NODE_ENV === "development") {
       query = format(query, { language: "postgresql", keywordCase: "upper" });
-    }
-    log.trace(
-      `PERFORMING DATABASE CALL
+      log.trace(
+        `PERFORMING DATABASE CALL
 params:
 %o
 query:
 %o`,
-      params,
-      query
-    );
+        params,
+        query
+      );
+    }
   }
 }
 
