@@ -68,11 +68,18 @@ export class ItemsController implements Controller {
         },
         {
           in: "query",
+          schema: { type: "string" },
+          name: "category",
+          description: "the category id",
+        },
+        {
+          in: "query",
           schema: {
             type: "string",
           },
           name: "orderBy",
-          description: 'values from "price", "qty", "rating", "orderCount", "offerPrice"',
+          description:
+            'values from "price", "qty", "rating", "orderCount", "offerPrice"',
         },
         {
           in: "query",

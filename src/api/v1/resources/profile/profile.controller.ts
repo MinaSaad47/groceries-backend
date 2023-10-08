@@ -22,6 +22,8 @@ import {
   SelectOrderSchema,
   SelectProfileFavorite,
   SelectProfileFavoriteSchema,
+  UpdateAddress,
+  UpdateAddressSchema,
 } from "./profile.validation";
 
 export class ProfileController implements Controller {
@@ -174,6 +176,29 @@ export class ProfileController implements Controller {
 
     registry.registerPath({
       tags: ["profile"],
+      path: "/profile/addresses/{addressId}",
+      method: "patch",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "update an address",
+      request: {
+        params: SelectAddressSchema,
+        body: {
+          content: {
+            "application/json": {
+              schema: UpdateAddressSchema,
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "updated address",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["profile"],
       path: "/profile/picture",
       method: "post",
       security: [{ [bearerAuth.name]: [] }],
@@ -271,9 +296,11 @@ export class ProfileController implements Controller {
       );
     this.router
       .route("/addresses/:addressId")
-      .delete(
-        validateRequest(z.object({ params: SelectAddressSchema })),
-        this.deleteAddress
+      .all(validateRequest(z.object({ params: SelectAddressSchema })))
+      .delete(this.deleteAddress)
+      .patch(
+        validateRequest(z.object({ body: UpdateAddressSchema })),
+        this.updateAddress
       );
 
     this.router.route("/orders").get(this.getAllOrders);
@@ -346,6 +373,19 @@ export class ProfileController implements Controller {
       i18n: { key: "profile.address" },
     });
   };
+
+  private updateAddress: RequestHandler<SelectAddress, {}, UpdateAddress> =
+    async (req, res) => {
+      const address = await this.profileSerivce.updateAddress(
+        req.user!.id,
+        req.params.addressId,
+        req.body
+      );
+      return res.success({
+        data: address,
+        i18n: { key: "profile.address.update" },
+      });
+    };
 
   private deleteAddress: RequestHandler<SelectAddress> = async (req, res) => {
     const address = await this.profileSerivce.deleteAddress(

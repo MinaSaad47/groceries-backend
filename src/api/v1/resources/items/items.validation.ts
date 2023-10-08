@@ -1,6 +1,5 @@
-import { items, itemsTrans, reviews } from "@api/v1/db/schema";
+import { items, reviews } from "@api/v1/db/schema";
 import { faker } from "@faker-js/faker";
-import { ilike } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -62,14 +61,15 @@ export const SelectItemSchema = z
 export type SelectItem = z.infer<typeof SelectItemSchema>;
 
 export const QueryLangSchema = z.object({
-  lang: z.enum(["en", "ar"]).default("en"),
+  lang: z.enum(["en", "ar"]).optional().default("en"),
 });
 export type QueryLang = z.infer<typeof QueryLangSchema>;
 
 export const QueryItemsSchema = z
   .object({
-    lang: z.enum(["en", "ar"]).default("en"),
+    lang: z.enum(["en", "ar"]).optional().default("en"),
     q: z.string().optional(),
+    category: z.string().uuid().optional(),
     orderBy: z
       .preprocess(
         (val) => String(val).split(","),
@@ -85,8 +85,10 @@ export const QueryItemsSchema = z
   })
   .or(
     z.object({
-      lang: z.enum(["en", "ar"]).default("en"),
+      lang: z.enum(["en", "ar"]).optional().default("en"),
       q: z.string().optional(),
+      category: z.string().uuid().optional(),
+
       orderBy: z
         .preprocess(
           (val) => String(val).split(","),
@@ -99,10 +101,11 @@ export const QueryItemsSchema = z
       perPage: z.number({ coerce: true }).int().positive(),
     })
   )
-  .transform(({ lang, q, page, perPage, orderBy }) => ({
+  .transform(({ category, lang, q, page, perPage, orderBy }) => ({
     ...(page && perPage && { offset: (page - 1) * perPage, limit: perPage }),
-    ...(q && { where: ilike(itemsTrans.name, `%${q}%`) }),
     orderBy,
+    q,
+    category,
     lang,
   }));
 

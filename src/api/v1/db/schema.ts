@@ -1,5 +1,6 @@
 import { InferSelectModel, relations } from "drizzle-orm";
 import {
+  boolean,
   date,
   doublePrecision,
   integer,
@@ -47,6 +48,7 @@ export const addresses = pgTable("addresses", {
   floorNumber: varchar("floor_number", { length: 255 }),
   lat: doublePrecision("lat").notNull(),
   lng: doublePrecision("lng").notNull(),
+  isDefault: boolean("is_default").default(false),
 });
 export const addressesRelations = relations(addresses, ({ one }) => ({
   user: one(users, { fields: [addresses.userId], references: [users.id] }),

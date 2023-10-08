@@ -1,7 +1,7 @@
-import { createInsertSchema } from "drizzle-zod";
-import { categories } from "../../db/schema";
-import { z } from "zod";
 import { faker } from "@faker-js/faker";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+import { categories } from "../../db/schema";
 
 export const CreateCategorySchema = createInsertSchema(categories)
   .omit({

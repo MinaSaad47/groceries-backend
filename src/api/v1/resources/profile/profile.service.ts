@@ -14,7 +14,7 @@ import { SQL, and, eq, getTableColumns } from "drizzle-orm";
 import { omit } from "lodash";
 import { QueryItems } from "../items/items.validation";
 import { UpdateUser } from "../users/users.validation";
-import { CreateAddress } from "./profile.validation";
+import { CreateAddress, UpdateAddress } from "./profile.validation";
 
 export class ProfileService {
   private db: Database;
@@ -85,7 +85,11 @@ export class ProfileService {
 
     return await this.db
       .with(transSQ)
-      .select({...getTableColumns(items), name: transSQ.name, description: transSQ.description})
+      .select({
+        ...getTableColumns(items),
+        name: transSQ.name,
+        description: transSQ.description,
+      })
       .from(items)
       .leftJoin(transSQ, eq(items.id, transSQ.itemId))
       .leftJoin(favorites, eq(items.id, favorites.itemId))
@@ -108,6 +112,27 @@ export class ProfileService {
       throw new NotFoundError("addresses", addressId);
     }
     return address;
+  }
+
+  public async updateAddress(
+    userId: string,
+    addressId: string,
+    updateAddress: UpdateAddress
+  ) {
+    return await this.db.transaction(async (tx) => {
+      if (updateAddress.isDefault === true) {
+        await tx
+          .update(addresses)
+          .set({ isDefault: false })
+          .where(eq(addresses.userId, userId));
+      }
+
+      return await tx
+        .update(addresses)
+        .set(updateAddress)
+        .where(and(eq(addresses.userId, userId), eq(addresses.id, addressId)))
+        .returning();
+    });
   }
 
   public async getAllOrders(userId: string) {

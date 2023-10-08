@@ -120,21 +120,6 @@ export class CategoriesController implements Controller {
       },
     });
 
-    registry.registerPath({
-      tags: ["categories"],
-      path: "/categories/{categoryId}/items",
-      method: "get",
-      summary: "get all items for this category",
-      request: {
-        params: SelectCategorySchema,
-      },
-      responses: {
-        200: {
-          description: "array of items",
-        },
-      },
-    });
-
     this.router.use(requireJwt);
 
     this.router
@@ -167,11 +152,6 @@ export class CategoriesController implements Controller {
         validateRequest(z.object({ params: SelectCategorySchema })),
       ])
       .post(uploadCategoryImage, this.uploadImage);
-
-    this.router
-      .route("/:categoryId/items")
-      .all(validateRequest(z.object({ params: SelectCategorySchema })))
-      .get(this.getAllItems);
   }
 
   private addOne: RequestHandler<{}, CreateCategory> = async (req, res) => {
@@ -218,10 +198,5 @@ export class CategoriesController implements Controller {
       { image: url }
     );
     return res.success({ data: category, i18n: { key: "categories.update" } });
-  };
-
-  private getAllItems: RequestHandler<SelectCategory> = async (req, res) => {
-    const category = await this.categoriesService.getOne(req.params.categoryId);
-    return res.success({ data: category.items });
   };
 }

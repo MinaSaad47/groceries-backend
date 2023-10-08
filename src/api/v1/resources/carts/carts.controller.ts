@@ -3,6 +3,7 @@ import Controller from "@api/v1/utils/interfaces/controller.interface";
 import { bearerAuth, registry } from "@api/v1/utils/openapi/registery";
 import { Request, Response, Router } from "express";
 import { z } from "zod";
+import { QueryLang, QueryLangSchema } from "../items/items.validation";
 import { CartsService } from "./carts.service";
 import {
   CreateCartToItem,
@@ -62,6 +63,16 @@ export class CartsController implements Controller {
       request: {
         params: SelectCartSchema,
       },
+      parameters: [
+        {
+          in: "query",
+          schema: {
+            type: "string",
+          },
+          name: "lang",
+          description: "value from 'ar', 'en'",
+        },
+      ],
       responses: {
         200: {
           description: "created cart",
@@ -125,13 +136,16 @@ export class CartsController implements Controller {
       },
     });
 
-
     this.router.use(requireJwt);
     this.router.route("/").post(this.createOne).get(this.getAll);
 
     this.router
       .route("/:cartId")
-      .all(validateRequest(z.object({ params: SelectCartSchema })))
+      .all(
+        validateRequest(
+          z.object({ params: SelectCartSchema, query: QueryLangSchema })
+        )
+      )
       .get(this.getOne);
     this.router
       .route("/:cartId/checkout")
@@ -151,7 +165,6 @@ export class CartsController implements Controller {
       .route("/:cartId/items/:itemId")
       .all(validateRequest(z.object({ params: SelectCartToItemSchema })))
       .delete(this.deleteItem);
-
   }
 
   private createOne = async (req: Request, res: Response) => {
@@ -159,8 +172,15 @@ export class CartsController implements Controller {
     res.success({ code: 201, data: cart, i18n: { key: "cart" } });
   };
 
-  private getOne: RequestHandler<SelectCart> = async (req, res) => {
-    const cart = await this.cartsService.getOne(req.user!, req.params.cartId);
+  private getOne: RequestHandler<SelectCart, {}, QueryLang> = async (
+    req,
+    res
+  ) => {
+    const cart = await this.cartsService.getOne(
+      req.user!,
+      req.params.cartId,
+      req.query
+    );
     if (cart?.userId !== req.user?.id) {
       res.fail({ code: 404, i18n: { key: "cart" } });
     } else {

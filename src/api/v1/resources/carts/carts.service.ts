@@ -3,17 +3,18 @@ import {
   carts,
   cartsToItems,
   items,
+  itemsTrans,
   orders,
-  OrderStatus,
   ordersToItems,
   User,
 } from "@api/v1/db/schema";
 import { PaymentService } from "@api/v1/services/payment.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { and, eq, sql, SQL } from "drizzle-orm";
-import { AuthorizationError } from "../../utils/errors/auth.error";
-import { EmptyCartError, ItemAvailabilityError } from "./carts.errors";
+import { and, eq, sql } from "drizzle-orm";
 import { omit } from "lodash";
+import { AuthorizationError } from "../../utils/errors/auth.error";
+import { QueryLang } from "../items/items.validation";
+import { EmptyCartError, ItemAvailabilityError } from "./carts.errors";
 
 export class CartsService {
   private db: Database;
@@ -39,20 +40,40 @@ export class CartsService {
     });
   }
 
-  public async getOne(user: User, cartId: string) {
-    return await this.db.transaction(async (tx) => {
-      await this.authorizeAndCheckIfExists(tx, user, cartId);
+  public async getOne(user: User, cartId: string, queryLang: QueryLang) {
+    return await this.db
+      .transaction(async (tx) => {
+        await this.authorizeAndCheckIfExists(tx, user, cartId);
 
-      return await tx.query.carts.findFirst({
-        where: and(eq(carts.userId, user.id), eq(carts.id, cartId)),
-        with: {
-          items: {
-            with: { item: {columns: { qty: false }} },
-            columns: { cartId: false, itemId: false },
+        return await tx.query.carts.findFirst({
+          where: and(eq(carts.userId, user.id), eq(carts.id, cartId)),
+          with: {
+            items: {
+              with: {
+                item: {
+                  columns: { qty: false },
+                  with: {
+                    details: { where: eq(itemsTrans.lang, queryLang.lang) },
+                  },
+                },
+              },
+              columns: { cartId: false, itemId: false },
+            },
           },
-        },
-      });
-    });
+        });
+      })
+      .then((cart) => ({
+        ...cart,
+        items: cart?.items.map((item) => ({
+          ...item,
+          item: {
+            ...item.item,
+            name: item.item.details[0].name,
+            description: item.item.details[0].description,
+            details: undefined,
+          },
+        })),
+      }));
   }
 
   public async addItem(
@@ -88,7 +109,7 @@ export class CartsService {
 
       return tx.query.cartsToItems.findFirst({
         where: eq(cartsToItems.cartId, cartItem.cartId),
-        with: { item: { columns: { qty: false } } },
+        with: { item: { columns: { qty: false }, with: { details: true } } },
         columns: { itemId: false },
       });
     });
@@ -191,7 +212,6 @@ export class CartsService {
       return { order, clientSecret, publishableKey };
     });
   }
-
 
   private async authorizeAndCheckIfExists(
     ctx: Database,

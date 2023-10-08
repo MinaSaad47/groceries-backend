@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { Database } from "../../db";
 import { categories } from "../../db/schema";
-import { CreateCategory, UpdateCategory } from "./categories.validation";
 import { NotFoundError } from "../../utils/errors/notfound.error";
+import { CreateCategory, UpdateCategory } from "./categories.validation";
 
 export class CategoriesService {
   constructor(private db: Database) {}
@@ -39,17 +39,6 @@ export class CategoriesService {
       .set(set)
       .where(eq(categories.id, categoryId))
       .returning();
-    if (!category) {
-      throw new NotFoundError("categories", categoryId);
-    }
-    return category;
-  }
-
-  public async getOne(categoryId: string) {
-    const category = await this.db.query.categories.findFirst({
-      where: eq(categories.id, categoryId),
-      with: { items: true },
-    });
     if (!category) {
       throw new NotFoundError("categories", categoryId);
     }
