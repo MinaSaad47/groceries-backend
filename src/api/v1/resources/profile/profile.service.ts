@@ -139,6 +139,7 @@ export class ProfileService {
     return await this.db.query.orders.findMany({
       where: eq(orders.userId, userId),
       columns: { userId: false, paymentIntentId: false },
+      with: { items: {columns: {orderId: false, itemId: false}} },
     });
   }
 
