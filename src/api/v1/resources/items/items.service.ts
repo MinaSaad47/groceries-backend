@@ -9,8 +9,7 @@ import {
 } from "@api/v1/db/schema";
 import { ImageUploadService } from "@api/v1/services/image_upload.service";
 import { NotFoundError } from "@api/v1/utils/errors/notfound.error";
-import { and, desc, eq, getTableColumns, ilike, sql } from "drizzle-orm";
-import { ceil } from "lodash";
+import { and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import {
   CreateItem,
   CreateItemReview,
@@ -18,6 +17,8 @@ import {
   QueryLang,
   UpdateItem,
 } from "./items.validation";
+
+import { ceil } from "lodash";
 
 export class ItemsService {
   private db: Database;
@@ -74,8 +75,8 @@ export class ItemsService {
       .leftJoin(orderCountSQ, eq(items.id, orderCountSQ.itemId))
       .leftJoin(ratingSQ, eq(items.id, ratingSQ.itemId));
 
-    if (query?.q) {
-      statement = statement.where(ilike(itemsTrans.name, `%${query.q}%`));
+    if (query?.filter) {
+      statement = statement.where(query.filter);
     }
 
     if (query?.category) {

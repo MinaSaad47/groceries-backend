@@ -49,8 +49,8 @@ export class ItemsController implements Controller {
           schema: {
             type: "string",
           },
-          name: "q",
-          description: "a search term",
+          name: "filter",
+          description: "filter crieteria, for example 'name~ta,offerPrice>0,qty<50,price<20'",
         },
         {
           in: "query",

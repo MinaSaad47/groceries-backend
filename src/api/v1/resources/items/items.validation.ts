@@ -1,6 +1,8 @@
 import { items, reviews } from "@api/v1/db/schema";
 import { faker } from "@faker-js/faker";
+import { and, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { snakeCase } from "lodash";
 import { z } from "zod";
 
 export const CreateItemSchema = createInsertSchema(items)
@@ -65,10 +67,54 @@ export const QueryLangSchema = z.object({
 });
 export type QueryLang = z.infer<typeof QueryLangSchema>;
 
+const OperationSchema = z
+  .object({
+    field: z.enum(["name", "description"]),
+    operator: z.enum(["~"]),
+    value: z.string().nonempty(),
+  })
+  .or(
+    z.object({
+      field: z
+        .enum(["price", "offerPrice", "qty"])
+        .transform((e) => snakeCase(e)),
+      operator: z.enum([">", "<", "=", "<=", ">="]),
+      value: z.number({ coerce: true }).min(0),
+    })
+  )
+  .transform(({ field, operator, value }) => {
+    switch (operator) {
+      case "~":
+        return sql.raw(`${field} ilike '%${value}%'`);
+      case ">":
+        return sql.raw(`${field} > ${value}`);
+      case "<":
+        return sql.raw(`${field} < ${value}`);
+      case "=":
+        return sql.raw(`${field} = ${value}`);
+      case ">=":
+        return sql.raw(`${field} >= ${value}`);
+      case "<=":
+        return sql.raw(`${field} <= ${value}`);
+    }
+  });
+
+const FilterItemsSchema = z.preprocess(
+  (data) => {
+    const operations = String(data).split(",");
+
+    return operations.map((operation) => {
+      const [field, operator, value] = operation.split(/(~|>|<|=|>=|<=)/);
+      return { field, operator, value };
+    });
+  },
+  z.array(OperationSchema).transform((operations) => and(...operations))
+);
+
 export const QueryItemsSchema = z
   .object({
     lang: z.enum(["en", "ar"]).optional().default("en"),
-    q: z.string().optional(),
+    filter: FilterItemsSchema.optional(),
     category: z.string().uuid().optional(),
     orderBy: z
       .preprocess(
@@ -86,7 +132,7 @@ export const QueryItemsSchema = z
   .or(
     z.object({
       lang: z.enum(["en", "ar"]).optional().default("en"),
-      q: z.string().optional(),
+      filter: FilterItemsSchema.optional(),
       category: z.string().uuid().optional(),
 
       orderBy: z
@@ -101,10 +147,10 @@ export const QueryItemsSchema = z
       perPage: z.number({ coerce: true }).int().positive(),
     })
   )
-  .transform(({ category, lang, q, page, perPage, orderBy }) => ({
+  .transform(({ category, lang, filter, page, perPage, orderBy }) => ({
     ...(page && perPage && { offset: (page - 1) * perPage, limit: perPage }),
     orderBy,
-    q,
+    filter,
     category,
     lang,
   }));
