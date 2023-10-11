@@ -12,6 +12,8 @@ import {
   SelectCartSchema,
   SelectCartToItem,
   SelectCartToItemSchema,
+  UpdateCartToItem,
+  UpdateCartToItemSchema,
 } from "./carts.validation";
 
 export class CartsController implements Controller {
@@ -123,6 +125,29 @@ export class CartsController implements Controller {
     registry.registerPath({
       tags: ["carts"],
       path: "/profile/carts/{cartId}/items/{itemId}",
+      method: "patch",
+      security: [{ [bearerAuth.name]: [] }],
+      summary: "update item in cart",
+      request: {
+        params: SelectCartToItemSchema,
+        body: {
+          content: {
+            "application/json": {
+              schema: UpdateCartToItemSchema,
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "updated item",
+        },
+      },
+    });
+
+    registry.registerPath({
+      tags: ["carts"],
+      path: "/profile/carts/{cartId}/items/{itemId}",
       method: "delete",
       security: [{ [bearerAuth.name]: [] }],
       summary: "remove item from cart",
@@ -164,7 +189,11 @@ export class CartsController implements Controller {
     this.router
       .route("/:cartId/items/:itemId")
       .all(validateRequest(z.object({ params: SelectCartToItemSchema })))
-      .delete(this.deleteItem);
+      .delete(this.deleteItem)
+      .patch(
+        validateRequest(z.object({ body: UpdateCartToItemSchema })),
+        this.updateItem
+      );
   }
 
   private createOne = async (req: Request, res: Response) => {
@@ -217,6 +246,18 @@ export class CartsController implements Controller {
       data: order,
     });
   };
+
+  private updateItem: RequestHandler<SelectCartToItem, UpdateCartToItem> =
+    async (req, res) => {
+      const item = await this.cartsService.updateItem(
+        req.user!,
+        req.params.cartId,
+        req.params.itemId,
+        req.body.qty
+      );
+
+      res.success({ code: 200, data: item, i18n: { key: "cart.item.update" } });
+    };
 
   private deleteItem: RequestHandler<SelectCartToItem> = async (req, res) => {
     await this.cartsService.deleteItem(

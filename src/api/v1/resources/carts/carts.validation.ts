@@ -20,3 +20,10 @@ export const SelectCartToItemSchema = CartToItemSchema.omit({
   qty: true,
 });
 export type SelectCartToItem = z.infer<typeof SelectCartToItemSchema>;
+
+export const UpdateCartToItemSchema = CartToItemSchema.omit({
+  itemId: true,
+  cartId: true,
+});
+
+export type UpdateCartToItem = z.infer<typeof UpdateCartToItemSchema>;

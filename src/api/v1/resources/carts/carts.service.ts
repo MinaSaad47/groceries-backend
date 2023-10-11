@@ -115,6 +115,36 @@ export class CartsService {
     });
   }
 
+  public async updateItem(
+    user: User,
+    cartId: string,
+    itemId: string,
+    qty: number
+  ) {
+    return await this.db.transaction(async (tx) => {
+      await this.authorizeAndCheckIfExists(tx, user, cartId);
+      const where = and(
+        eq(cartsToItems.cartId, cartId),
+        eq(cartsToItems.itemId, itemId)
+      );
+
+      const [cartToItem] = await tx
+        .update(cartsToItems)
+        .set({ qty })
+        .where(where)
+        .returning();
+
+      if (!cartToItem) {
+        throw new NotFoundError("carts_to_items", itemId);
+      }
+      return tx.query.cartsToItems.findFirst({
+        where,
+        with: { item: { columns: { qty: false }, with: { details: true } } },
+        columns: { itemId: false },
+      });
+    });
+  }
+
   public async deleteItem(user: User, cartId: string, itemId: string) {
     await this.db.transaction(async (tx) => {
       await this.authorizeAndCheckIfExists(tx, user, cartId);
