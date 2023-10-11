@@ -105,6 +105,10 @@ export class CartsService {
       const [cartItem] = await tx
         .insert(cartsToItems)
         .values({ cartId, itemId, qty })
+        .onConflictDoUpdate({
+          set: { qty: sql`${cartsToItems.qty} + ${qty}` },
+          target: [cartsToItems.cartId, cartsToItems.itemId],
+        })
         .returning();
 
       return tx.query.cartsToItems.findFirst({
